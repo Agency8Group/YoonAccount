@@ -404,7 +404,18 @@ document.getElementById('accountForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     
     const user = auth.currentUser;
-    if (!user) return;
+    if (!user) {
+        alert('로그인이 필요합니다.');
+        return;
+    }
+    
+    // 저장 버튼 비활성화 및 로딩 표시
+    const submitBtn = document.querySelector('#accountForm button[type="submit"]');
+    const originalBtnText = submitBtn ? submitBtn.textContent : '저장';
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = '저장 중...';
+    }
     
     const itemData = {
         serviceName: document.getElementById('serviceName').value.trim(),
@@ -415,6 +426,16 @@ document.getElementById('accountForm').addEventListener('submit', async (e) => {
         userId: user.uid,
         updatedAt: Date.now()
     };
+    
+    // 필수 필드 검증
+    if (!itemData.serviceName || !itemData.username || !itemData.password) {
+        alert('사이트명, 아이디, 비밀번호는 필수 입력 항목입니다.');
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalBtnText;
+        }
+        return;
+    }
     
     // 계정인 경우 사이트 주소 추가
     if (currentItemType === 'account') {
@@ -430,27 +451,82 @@ document.getElementById('accountForm').addEventListener('submit', async (e) => {
         itemData.insuranceNumber = document.getElementById('insuranceNumber').value.trim();
     }
     
+    console.log('저장할 데이터:', itemData);
+    
     try {
+        let savedRef;
         if (editingItemId) {
             // 수정
             itemData.updatedAt = Date.now();
-            await db.ref('items').child(editingItemId).update(itemData);
+            console.log('수정 모드 - ID:', editingItemId);
+            savedRef = db.ref('items').child(editingItemId);
+            await savedRef.update(itemData);
+            console.log('수정 완료');
         } else {
             // 추가
             itemData.createdAt = Date.now();
-            await db.ref('items').push(itemData);
+            console.log('추가 모드');
+            savedRef = await db.ref('items').push(itemData);
+            console.log('추가 완료 - 생성된 키:', savedRef.key);
         }
         
-        closeModal();
-        loadData();
-    } catch (error) {
-        console.error('저장 오류:', error);
-        // 권한 오류 감지
-        if (error.code === 'PERMISSION_DENIED' || error.message.includes('permission-denied')) {
-            checkFirebaseConnection();
-            alert('데이터베이스 권한이 없습니다.\n\nFirebase Console에서 Realtime Database 규칙을 확인해주세요.');
+        // 저장 성공 확인
+        const verifySnapshot = await savedRef.once('value');
+        if (verifySnapshot.exists()) {
+            console.log('저장 확인됨:', verifySnapshot.val());
+            closeModal();
+            // 약간의 지연 후 데이터 로드 (데이터베이스 동기화 대기)
+            setTimeout(() => {
+                loadData();
+            }, 300);
         } else {
-            alert('저장 중 오류가 발생했습니다: ' + (error.message || error.code || '알 수 없는 오류'));
+            throw new Error('저장은 되었지만 데이터를 확인할 수 없습니다.');
+        }
+    } catch (error) {
+        console.error('저장 오류 상세:', {
+            code: error.code,
+            message: error.message,
+            stack: error.stack,
+            fullError: error
+        });
+        
+        // 권한 오류 감지
+        if (error.code === 'PERMISSION_DENIED' || 
+            error.message.includes('permission-denied') ||
+            error.message.includes('PERMISSION_DENIED')) {
+            checkFirebaseConnection();
+            alert(`데이터베이스 권한이 없습니다.
+
+Firebase Console > Realtime Database > 규칙 탭에서 다음 규칙 중 하나를 설정해주세요:
+
+[옵션 1: 인증된 사용자만 접근 (권장)]
+{
+  "rules": {
+    ".read": "auth != null",
+    ".write": "auth != null"
+  }
+}
+
+[옵션 2: 완전히 열어두기 (개발/테스트용만)]
+{
+  "rules": {
+    ".read": true,
+    ".write": true
+  }
+}
+
+주의: 옵션 2는 모든 사람이 접근할 수 있으므로 개발 중에만 사용하세요!`);
+        } else {
+            alert('저장 중 오류가 발생했습니다.\n\n' +
+                  '오류 코드: ' + (error.code || '없음') + '\n' +
+                  '오류 메시지: ' + (error.message || '알 수 없는 오류') + '\n\n' +
+                  '브라우저 콘솔(F12)에서 자세한 오류를 확인할 수 있습니다.');
+        }
+    } finally {
+        // 버튼 상태 복원
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalBtnText;
         }
     }
 });
@@ -458,7 +534,12 @@ document.getElementById('accountForm').addEventListener('submit', async (e) => {
 // 데이터 로드
 async function loadData() {
     const user = auth.currentUser;
-    if (!user) return;
+    if (!user) {
+        console.log('사용자 로그인 정보 없음');
+        return;
+    }
+    
+    console.log('데이터 로드 시작 - 사용자 ID:', user.uid);
     
     try {
         const snapshot = await db.ref('items')
@@ -466,12 +547,15 @@ async function loadData() {
             .equalTo(user.uid)
             .once('value');
         
+        console.log('데이터 스냅샷:', snapshot.exists() ? '존재함' : '없음');
+        
         const accounts = [];
         const insurance = [];
         
         if (snapshot.exists()) {
             snapshot.forEach((childSnapshot) => {
                 const data = { id: childSnapshot.key, ...childSnapshot.val() };
+                console.log('데이터 항목:', data);
                 if (data.type === 'account') {
                     accounts.push(data);
                 } else {
@@ -480,6 +564,9 @@ async function loadData() {
             });
         }
         
+        console.log('로드된 계정 수:', accounts.length);
+        console.log('로드된 보험정보 수:', insurance.length);
+        
         // updatedAt 기준으로 정렬
         accounts.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
         insurance.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
@@ -487,10 +574,21 @@ async function loadData() {
         renderAccounts(accounts);
         renderInsurance(insurance);
     } catch (error) {
-        console.error('데이터 로드 오류:', error);
+        console.error('데이터 로드 오류 상세:', {
+            code: error.code,
+            message: error.message,
+            stack: error.stack,
+            fullError: error
+        });
+        
         // 권한 오류 감지 시 연결 상태 업데이트
-        if (error.code === 'PERMISSION_DENIED' || error.message.includes('permission-denied')) {
+        if (error.code === 'PERMISSION_DENIED' || 
+            error.message.includes('permission-denied') ||
+            error.message.includes('PERMISSION_DENIED')) {
             checkFirebaseConnection();
+            alert('데이터를 불러올 수 없습니다.\n\nRealtime Database 보안 규칙을 확인해주세요.');
+        } else {
+            alert('데이터를 불러오는 중 오류가 발생했습니다.\n\n브라우저 콘솔(F12)에서 자세한 오류를 확인할 수 있습니다.');
         }
     }
 }
