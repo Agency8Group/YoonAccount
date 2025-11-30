@@ -6,7 +6,7 @@ const firebaseConfig = {
     storageBucket: "yoonaccount.firebasestorage.app",
     messagingSenderId: "708767085930",
     appId: "1:708767085930:web:0c9418df304f1c5bb4e113",
-    databaseURL: "https://yoonaccount-default-rtdb.firebaseio.com/" // Realtime Database URL
+    databaseURL: "https://yoonaccount-default-rtdb.asia-southeast1.firebasedatabase.app" // Realtime Database URL
 };
 
 // Firebase 초기화
