@@ -2,6 +2,7 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
 }
 
 :root {
@@ -12,19 +13,59 @@
     --text-secondary: #a0a0a0;
     --accent: #007aff;
     --accent-hover: #0051d5;
+    --accent-pressed: #0040a3;
     --border: #333333;
     --success: #34c759;
     --error: #ff3b30;
     --card-bg: #1a1a1a;
     --card-hover: #252525;
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.15);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.2);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.3);
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 20px;
+    --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
     background: var(--bg-primary);
     color: var(--text-primary);
-    line-height: 1.6;
+    line-height: 1.5;
     min-height: 100vh;
+    min-height: 100dvh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* 스크롤바 스타일링 (웹킷 브라우저) */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--border);
 }
 
 .screen {
@@ -37,34 +78,53 @@ body {
     align-items: center;
     justify-content: center;
     min-height: 100vh;
+    min-height: 100dvh; /* 동적 뷰포트 높이 */
     padding: 20px;
     background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+    position: relative;
+    overflow-y: auto;
 }
 
 .login-box {
     background: var(--bg-secondary);
     border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 50px 40px;
+    border-radius: var(--radius-xl);
+    padding: 40px 32px;
     width: 100%;
     max-width: 420px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    box-shadow: var(--shadow-lg);
+    animation: fadeInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .logo {
-    font-size: 32px;
-    font-weight: 600;
-    margin-bottom: 10px;
+    font-size: 36px;
+    font-weight: 700;
+    margin-bottom: 12px;
     background: linear-gradient(135deg, #ffffff 0%, #a0a0a0 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    letter-spacing: -0.5px;
 }
 
 .subtitle {
     color: var(--text-secondary);
-    font-size: 14px;
-    margin-bottom: 30px;
+    font-size: 15px;
+    margin-bottom: 32px;
+    line-height: 1.5;
+    font-weight: 400;
 }
 
 .auth-form {
@@ -72,70 +132,130 @@ body {
 }
 
 .input-group {
-    margin-bottom: 16px;
+    margin-bottom: 20px;
 }
 
 .input-group input {
     width: 100%;
-    padding: 14px 18px;
+    padding: 16px 20px;
     background: var(--bg-tertiary);
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     color: var(--text-primary);
-    font-size: 15px;
-    transition: all 0.3s ease;
+    font-size: 16px; /* 모바일에서 자동 줌 방지 */
+    transition: all var(--transition-base);
+    -webkit-appearance: none;
+    appearance: none;
 }
 
 .input-group input:focus {
     outline: none;
     border-color: var(--accent);
     background: var(--bg-secondary);
+    box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.1);
 }
 
 .input-group input::placeholder {
     color: var(--text-secondary);
+    opacity: 0.6;
+}
+
+/* iOS 스타일 입력 필드 */
+@media (max-width: 768px) {
+    .input-group input {
+        font-size: 16px; /* iOS 자동 줌 방지 */
+    }
 }
 
 .btn-primary {
     width: 100%;
-    padding: 14px;
+    min-height: 50px; /* 터치 친화적 크기 */
+    padding: 14px 24px;
     background: var(--accent);
     color: white;
     border: none;
-    border-radius: 12px;
-    font-size: 16px;
-    font-weight: 500;
+    border-radius: var(--radius-md);
+    font-size: 17px;
+    font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all var(--transition-base);
+    position: relative;
+    overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
 }
 
-.btn-primary:hover {
+.btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.btn-primary:active::before {
+    width: 300px;
+    height: 300px;
+}
+
+.btn-primary:hover:not(:disabled) {
     background: var(--accent-hover);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+    box-shadow: 0 4px 16px rgba(0, 122, 255, 0.4);
+}
+
+.btn-primary:active:not(:disabled) {
+    background: var(--accent-pressed);
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+}
+
+.btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 .btn-secondary {
+    min-height: 44px; /* 터치 친화적 크기 */
     padding: 10px 20px;
     background: var(--bg-tertiary);
     color: var(--text-primary);
     border: 1px solid var(--border);
-    border-radius: 10px;
-    font-size: 14px;
+    border-radius: var(--radius-sm);
+    font-size: 15px;
+    font-weight: 500;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all var(--transition-base);
+    -webkit-tap-highlight-color: transparent;
 }
 
-.btn-secondary:hover {
+.btn-secondary:hover:not(:disabled) {
     background: var(--bg-secondary);
     border-color: var(--accent);
+    transform: translateY(-1px);
+}
+
+.btn-secondary:active:not(:disabled) {
+    transform: translateY(0);
+    background: var(--card-hover);
+}
+
+.btn-secondary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .auth-toggle {
     text-align: center;
-    margin-top: 20px;
+    margin-top: 24px;
     color: var(--text-secondary);
     font-size: 14px;
+    line-height: 1.5;
 }
 
 .btn-link {
@@ -144,41 +264,150 @@ body {
     color: var(--accent);
     cursor: pointer;
     font-size: 14px;
+    font-weight: 500;
     margin-left: 5px;
-    text-decoration: underline;
+    text-decoration: none;
+    padding: 4px 0;
+    transition: all var(--transition-fast);
+    -webkit-tap-highlight-color: transparent;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
 }
 
 .btn-link:hover {
     color: var(--accent-hover);
+    text-decoration: underline;
+}
+
+.btn-link:active {
+    opacity: 0.7;
 }
 
 .error-message {
     color: var(--error);
     font-size: 13px;
-    margin-top: 15px;
-    text-align: center;
+    margin-top: 16px;
+    text-align: left;
     min-height: 20px;
+    line-height: 1.6;
+    padding: 12px 16px;
+    background: rgba(255, 59, 48, 0.1);
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(255, 59, 48, 0.3);
+    white-space: pre-line;
+    word-break: break-word;
+}
+
+.error-message:empty {
+    display: none;
+}
+
+/* 연결 상태 표시 */
+.connection-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--bg-tertiary);
+    border-radius: 20px;
+    margin-bottom: 20px;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+.login-box .connection-status {
+    margin-bottom: 20px;
+}
+
+.nav-actions .connection-status {
+    margin-bottom: 0;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    animation: pulse 2s infinite;
+}
+
+.status-dot.connected {
+    background-color: var(--success);
+    box-shadow: 0 0 8px var(--success);
+}
+
+.status-dot.disconnected {
+    background-color: var(--error);
+    box-shadow: 0 0 8px var(--error);
+}
+
+.status-dot.warning {
+    background-color: #ff9500;
+    box-shadow: 0 0 8px #ff9500;
+}
+
+.status-dot.checking {
+    background-color: var(--text-secondary);
+}
+
+.status-text {
+    color: var(--text-secondary);
+    font-size: 12px;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+}
+
+.status-text:hover {
+    opacity: 0.8;
+}
+
+.status-text.warning {
+    text-decoration: underline;
+}
+
+.status-text.connected {
+    color: var(--success);
+}
+
+.status-text.disconnected {
+    color: var(--error);
+}
+
+.status-text.warning {
+    color: #ff9500;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
 }
 
 /* 네비게이션 */
 .navbar {
-    background: var(--bg-secondary);
+    background: rgba(26, 26, 26, 0.8);
     border-bottom: 1px solid var(--border);
-    padding: 0 40px;
+    padding: 0;
     position: sticky;
     top: 0;
     z-index: 100;
-    backdrop-filter: blur(20px);
-    background: rgba(26, 26, 26, 0.8);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .nav-content {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    height: 70px;
+    height: 64px;
     max-width: 1400px;
     margin: 0 auto;
+    padding: 0 24px;
 }
 
 .nav-logo {
@@ -189,19 +418,35 @@ body {
 .nav-actions {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 12px;
+    flex-wrap: wrap;
 }
 
 .user-email {
     color: var(--text-secondary);
     font-size: 14px;
+    font-weight: 400;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* 메인 컨텐츠 */
 .main-content {
-    padding: 40px;
+    padding: 32px 24px;
     max-width: 1400px;
     margin: 0 auto;
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }
 
 .container {
@@ -213,11 +458,54 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 30px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.excel-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.excel-actions .btn-secondary {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+}
+
+.excel-actions .btn-secondary .icon {
+    font-size: 16px;
+}
+
+.excel-actions .btn-secondary .btn-text {
+    font-size: 14px;
+}
+
+@media (max-width: 768px) {
+    .excel-actions .btn-secondary .btn-text {
+        display: none;
+    }
+    
+    .excel-actions .btn-secondary {
+        padding: 10px;
+        min-width: 44px;
+    }
 }
 
 .header-section h1 {
-    font-size: 32px;
-    font-weight: 600;
+    font-size: 34px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
 }
 
 #addAccountBtn {
@@ -235,22 +523,33 @@ body {
 /* 탭 */
 .tabs {
     display: flex;
-    gap: 10px;
-    margin-bottom: 30px;
+    gap: 0;
+    margin-bottom: 32px;
     border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+
+.tabs::-webkit-scrollbar {
+    display: none;
 }
 
 .tab {
-    padding: 12px 24px;
+    padding: 14px 20px;
     background: none;
     border: none;
     color: var(--text-secondary);
-    font-size: 15px;
+    font-size: 16px;
+    font-weight: 500;
     cursor: pointer;
     border-bottom: 2px solid transparent;
-    transition: all 0.3s ease;
+    transition: all var(--transition-base);
     position: relative;
     top: 1px;
+    white-space: nowrap;
+    min-height: 48px; /* 터치 친화적 */
+    -webkit-tap-highlight-color: transparent;
 }
 
 .tab:hover {
@@ -260,6 +559,11 @@ body {
 .tab.active {
     color: var(--accent);
     border-bottom-color: var(--accent);
+    font-weight: 600;
+}
+
+.tab:active {
+    opacity: 0.7;
 }
 
 .tab-content {
@@ -273,24 +577,48 @@ body {
 /* 카드 그리드 */
 .cards-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
 }
 
 .account-card, .insurance-card {
     background: var(--card-bg);
     border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 24px;
-    transition: all 0.3s ease;
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    transition: all var(--transition-base);
     cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.account-card::before, .insurance-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transition: transform var(--transition-base);
+}
+
+.account-card:hover::before, .insurance-card:hover::before,
+.account-card:active::before, .insurance-card:active::before {
+    transform: scaleX(1);
 }
 
 .account-card:hover, .insurance-card:hover {
     background: var(--card-hover);
     border-color: var(--accent);
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    box-shadow: var(--shadow-md);
+}
+
+.account-card:active, .insurance-card:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-sm);
 }
 
 .card-header {
@@ -321,15 +649,26 @@ body {
     border: none;
     color: var(--text-secondary);
     cursor: pointer;
-    font-size: 16px;
-    padding: 4px 8px;
-    border-radius: 6px;
-    transition: all 0.2s ease;
+    font-size: 18px;
+    padding: 8px;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+    min-width: 36px;
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .btn-icon:hover {
     background: var(--bg-tertiary);
     color: var(--text-primary);
+}
+
+.btn-icon:active {
+    background: var(--card-hover);
+    transform: scale(0.95);
 }
 
 .card-info {
@@ -372,26 +711,64 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(10px);
+    height: 100dvh;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
     z-index: 1000;
     align-items: center;
     justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    transition: opacity var(--transition-base);
 }
 
 .modal.active {
     display: flex;
+    opacity: 1;
+    animation: fadeIn 0.2s ease-out;
 }
 
 .modal-content {
     background: var(--bg-secondary);
     border: 1px solid var(--border);
-    border-radius: 20px;
-    width: 90%;
-    max-width: 500px;
+    border-radius: var(--radius-xl);
+    width: 100%;
+    max-width: 520px;
     max-height: 90vh;
+    max-height: 90dvh;
     overflow-y: auto;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    overflow-x: hidden;
+    box-shadow: var(--shadow-lg);
+    transform: scale(0.95);
+    transition: transform var(--transition-base);
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+}
+
+.modal-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+}
+
+.modal.active .modal-content {
+    transform: scale(1);
+    animation: modalSlideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes modalSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 .modal-header {
@@ -411,21 +788,31 @@ body {
     background: none;
     border: none;
     color: var(--text-secondary);
-    font-size: 28px;
+    font-size: 24px;
     cursor: pointer;
     padding: 0;
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 8px;
-    transition: all 0.2s ease;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+    -webkit-tap-highlight-color: transparent;
+    font-weight: 300;
+    line-height: 1;
 }
 
 .modal-close:hover {
     background: var(--bg-tertiary);
     color: var(--text-primary);
+}
+
+.modal-close:active {
+    background: var(--card-hover);
+    transform: scale(0.9);
 }
 
 .modal-form {
@@ -447,14 +834,16 @@ body {
 .form-group input,
 .form-group textarea {
     width: 100%;
-    padding: 12px 16px;
+    padding: 14px 18px;
     background: var(--bg-tertiary);
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     color: var(--text-primary);
-    font-size: 15px;
+    font-size: 16px;
     font-family: inherit;
-    transition: all 0.3s ease;
+    transition: all var(--transition-base);
+    -webkit-appearance: none;
+    appearance: none;
 }
 
 .form-group input:focus,
@@ -462,6 +851,7 @@ body {
     outline: none;
     border-color: var(--accent);
     background: var(--bg-secondary);
+    box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.1);
 }
 
 .form-group textarea {
@@ -471,10 +861,16 @@ body {
 .password-input-group {
     display: flex;
     gap: 8px;
+    align-items: center;
 }
 
 .password-input-group input {
     flex: 1;
+}
+
+.password-input-group .btn-icon {
+    flex-shrink: 0;
+    margin: 0;
 }
 
 .modal-actions {
@@ -492,26 +888,182 @@ body {
 
 /* 반응형 */
 @media (max-width: 768px) {
+    .login-box {
+        padding: 32px 24px;
+        border-radius: var(--radius-lg);
+    }
+    
+    .logo {
+        font-size: 32px;
+    }
+    
+    .subtitle {
+        font-size: 14px;
+        margin-bottom: 28px;
+    }
+    
     .main-content {
-        padding: 20px;
+        padding: 20px 16px;
     }
     
     .header-section {
         flex-direction: column;
         align-items: flex-start;
-        gap: 20px;
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+    
+    .header-section h1 {
+        font-size: 28px;
+    }
+    
+    #addAccountBtn {
+        width: 100%;
+        justify-content: center;
     }
     
     .cards-grid {
         grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .account-card, .insurance-card {
+        padding: 18px;
     }
     
     .nav-content {
-        padding: 0 20px;
+        padding: 0 16px;
+        height: 56px;
+    }
+    
+    .nav-logo {
+        font-size: 18px;
+    }
+    
+    .nav-actions {
+        gap: 8px;
+    }
+    
+    .connection-status {
+        padding: 6px 10px;
+        font-size: 11px;
+    }
+    
+    .status-text {
+        font-size: 11px;
     }
     
     .user-email {
         display: none;
     }
+    
+    .tabs {
+        margin-bottom: 24px;
+    }
+    
+    .tab {
+        padding: 12px 16px;
+        font-size: 15px;
+        min-height: 44px;
+    }
+    
+    .modal {
+        padding: 16px;
+    }
+    
+    .modal-content {
+        max-height: 85vh;
+        max-height: 85dvh;
+        border-radius: var(--radius-lg);
+    }
+    
+    .modal-header {
+        padding: 20px 20px 0;
+        margin-bottom: 20px;
+    }
+    
+    .modal-header h3 {
+        font-size: 20px;
+    }
+    
+    .modal-form {
+        padding: 0 20px 20px;
+    }
+    
+    .form-group {
+        margin-bottom: 18px;
+    }
+    
+    .modal-actions {
+        flex-direction: column-reverse;
+        gap: 10px;
+    }
+    
+    .modal-actions .btn-primary,
+    .modal-actions .btn-secondary {
+        width: 100%;
+    }
 }
+
+@media (max-width: 480px) {
+    .login-container {
+        padding: 16px;
+    }
+    
+    .login-box {
+        padding: 28px 20px;
+    }
+    
+    .logo {
+        font-size: 28px;
+    }
+    
+    .input-group input {
+        padding: 14px 16px;
+    }
+    
+    .btn-primary {
+        min-height: 48px;
+        font-size: 16px;
+    }
+    
+    .main-content {
+        padding: 16px 12px;
+    }
+    
+    .header-section h1 {
+        font-size: 24px;
+    }
+    
+    .card-title {
+        font-size: 16px;
+    }
+    
+    .card-subtitle {
+        font-size: 12px;
+    }
+}
+
+/* 터치 디바이스 최적화 */
+@media (hover: none) and (pointer: coarse) {
+    .btn-primary:hover,
+    .btn-secondary:hover,
+    .btn-icon:hover,
+    .tab:hover,
+    .account-card:hover,
+    .insurance-card:hover {
+        transform: none;
+    }
+    
+    .btn-primary:active,
+    .btn-secondary:active {
+        opacity: 0.8;
+    }
+}
+
+/* 다크 모드 지원 (추가) */
+@media (prefers-color-scheme: light) {
+    /* 필요시 라이트 모드 스타일 추가 */
+}
+
 
