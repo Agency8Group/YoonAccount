@@ -348,7 +348,7 @@ function openModal(type, itemId = null) {
         insuranceFields.style.display = 'none';
         insuranceFields2.style.display = 'none';
         accountSiteUrlField.style.display = 'block';
-        serviceNameLabel.textContent = '사이트명';
+        serviceNameLabel.textContent = '서비스 명';
         notesLabel.textContent = '특이사항';
     }
     
@@ -429,7 +429,7 @@ document.getElementById('accountForm').addEventListener('submit', async (e) => {
     
     // 필수 필드 검증
     if (!itemData.serviceName || !itemData.username || !itemData.password) {
-        alert('사이트명, 아이디, 비밀번호는 필수 입력 항목입니다.');
+        alert('서비스 명, 아이디, 비밀번호는 필수 입력 항목입니다.');
         if (submitBtn) {
             submitBtn.disabled = false;
             submitBtn.textContent = originalBtnText;
@@ -1194,7 +1194,7 @@ async function downloadExcel() {
         // 계정 시트 생성
         const accountData = accounts.map(item => ({
             '사이트 주소': item.siteUrl || '',
-            '사이트명': item.serviceName || '',
+            '서비스 명': item.serviceName || '',
             '아이디 (이메일)': item.username || '',
             '비밀번호': item.password || '',
             '특이사항': item.notes || '',
@@ -1286,14 +1286,14 @@ async function uploadExcel(file) {
                                 password = row['비밀번호'] || '';
                             } else {
                                 // 계정인 경우 - 새로운 컬럼 형식
-                                serviceName = row['사이트명'] || row['서비스/사이트명'] || row['서비스'] || '';
+                                serviceName = row['서비스 명'] || row['사이트명'] || row['서비스/사이트명'] || row['서비스'] || '';
                                 username = row['아이디 (이메일)'] || row['아이디/이메일'] || row['아이디'] || row['이메일'] || '';
                                 password = row['비밀번호'] || '';
                             }
                             
                             if (!serviceName || !username || !password) {
                                 totalSkipped++;
-                                errors.push(`${sheetName} 시트 ${index + 2}행: 필수 필드 누락 (사이트명, 아이디, 비밀번호 필요)`);
+                                errors.push(`${sheetName} 시트 ${index + 2}행: 필수 필드 누락 (서비스 명, 아이디, 비밀번호 필요)`);
                                 return;
                             }
                             
