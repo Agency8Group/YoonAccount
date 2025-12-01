@@ -593,7 +593,18 @@ async function loadData() {
     }
 }
 
-// 계정 렌더링
+// URL에서 도메인 추출
+function getDomainFromUrl(url) {
+    if (!url) return '기타';
+    try {
+        const urlObj = new URL(url.startsWith('http') ? url : `https://${url}`);
+        return urlObj.hostname.replace('www.', '');
+    } catch (e) {
+        return url;
+    }
+}
+
+// 계정 렌더링 (아코디언 형태)
 function renderAccounts(accounts) {
     const container = document.getElementById('accountsList');
     
@@ -602,33 +613,115 @@ function renderAccounts(accounts) {
         return;
     }
     
-    container.innerHTML = accounts.map(account => `
-        <div class="account-card">
-            <div class="card-header">
-                <div>
-                    <div class="card-title">${escapeHtml(account.serviceName)}</div>
-                    <div class="card-subtitle">${escapeHtml(account.username)}</div>
-                    ${account.siteUrl ? `<div class="card-url" style="font-size: 11px; color: var(--accent); margin-top: 4px;">
-                        <a href="${escapeHtml(account.siteUrl)}" target="_blank" rel="noopener noreferrer" style="color: var(--accent); text-decoration: none;">
-                            ${escapeHtml(account.siteUrl)}
-                        </a>
-                    </div>` : ''}
+    // 저장된 그룹 이름 불러오기
+    const groupNames = JSON.parse(localStorage.getItem('accountGroupNames') || '{}');
+    
+    // URL 기반으로 그룹화
+    const groups = {};
+    accounts.forEach(account => {
+        const url = account.siteUrl || '';
+        const domain = getDomainFromUrl(url);
+        const originalKey = domain || '기타';
+        const groupKey = groupNames[originalKey] || originalKey;
+        
+        if (!groups[groupKey]) {
+            groups[groupKey] = {
+                name: groupKey,
+                originalKey: originalKey,
+                url: url,
+                accounts: [],
+                order: account.order || 0
+            };
+        }
+        groups[groupKey].accounts.push(account);
+    });
+    
+    // 그룹 정렬 (order 기준, 없으면 이름 기준)
+    const sortedGroups = Object.values(groups).sort((a, b) => {
+        if (a.order !== b.order) return (a.order || 0) - (b.order || 0);
+        return a.name.localeCompare(b.name);
+    });
+    
+    // 아코디언 HTML 생성
+    container.innerHTML = sortedGroups.map((group, groupIndex) => {
+        const groupId = `group-${groupIndex}`;
+        const isOpen = false; // 모든 그룹은 기본적으로 닫힌 상태
+        
+        return `
+            <div class="accordion-group" data-group-key="${escapeHtml(group.originalKey || group.name)}" draggable="false" data-group-index="${groupIndex}">
+                <div class="accordion-header" onclick="toggleAccordion('${groupId}')">
+                    <div class="accordion-header-content">
+                        <span class="drag-handle" title="드래그하여 순서 변경">☰</span>
+                        <input type="text" 
+                               class="group-name-input" 
+                               value="${escapeHtml(group.name)}" 
+                               onclick="event.stopPropagation()"
+                               onblur="updateGroupName('${groupId}', this.value, '${escapeHtml(group.originalKey || group.name)}')"
+                               onkeypress="if(event.key==='Enter') this.blur()"
+                               data-group-id="${groupId}"
+                               title="그룹 이름을 수정하려면 클릭하세요">
+                        <span class="group-count">(${group.accounts.length})</span>
+                        ${group.url ? `<a href="${escapeHtml(group.url)}" target="_blank" rel="noopener noreferrer" class="group-url" onclick="event.stopPropagation()" title="${escapeHtml(group.url)}">${escapeHtml(group.url.length > 30 ? group.url.substring(0, 30) + '...' : group.url)}</a>` : ''}
+                    </div>
+                    <div class="accordion-actions">
+                        <span class="accordion-icon" id="icon-${groupId}">▼</span>
+                    </div>
                 </div>
-                <div class="card-actions">
-                    <button class="btn-icon" onclick="editItem('account', '${account.id}')" title="수정">✏️</button>
-                    <button class="btn-icon" onclick="deleteItem('${account.id}')" title="삭제">🗑️</button>
+                <div class="accordion-content" id="${groupId}" style="display: ${isOpen ? 'block' : 'none'}">
+                    ${group.accounts.map(account => `
+                        <div class="account-item" draggable="false" data-account-id="${account.id}">
+                            <div class="account-item-content">
+                                <span class="drag-handle-small" onclick="event.stopPropagation()" title="드래그하여 순서 변경">☰</span>
+                                <div class="account-item-info" onclick="event.stopPropagation()">
+                                    <div class="account-item-title">${escapeHtml(account.serviceName)}</div>
+                                    <div class="account-item-credentials">
+                                        <div class="credential-row">
+                                            <span class="credential-label">아이디:</span>
+                                            <span class="credential-value" id="username-${account.id}">${escapeHtml(account.username || '')}</span>
+                                            <button class="btn-copy" data-copy-text="${escapeHtml(account.username || '')}" data-target-id="username-${account.id}" title="아이디 복사">📋</button>
+                                        </div>
+                                        <div class="credential-row">
+                                            <span class="credential-label">비밀번호:</span>
+                                            <span class="credential-value" id="password-${account.id}">${escapeHtml(account.password || '')}</span>
+                                            <button class="btn-copy" data-copy-text="${escapeHtml(account.password || '')}" data-target-id="password-${account.id}" title="비밀번호 복사">📋</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="account-item-actions" onclick="event.stopPropagation()">
+                                    <button class="btn-icon-small" onclick="editItem('account', '${account.id}')" title="수정">✏️</button>
+                                    <button class="btn-icon-small" onclick="deleteItem('${account.id}')" title="삭제">🗑️</button>
+                                </div>
+                            </div>
+                            ${account.notes ? `
+                            <div class="account-item-details" style="display: block;">
+                                <div class="card-notes"><strong>특이사항:</strong> ${escapeHtml(account.notes)}</div>
+                            </div>
+                            ` : ''}
+                        </div>
+                    `).join('')}
                 </div>
             </div>
-            <div class="card-info">
-                <div class="info-item">
-                    <span class="info-label">비밀번호:</span>
-                    <span class="info-value" id="pwd-${account.id}">••••••••</span>
-                </div>
-            </div>
-            ${account.notes ? `<div class="card-notes"><strong>특이사항:</strong> ${escapeHtml(account.notes)}</div>` : ''}
-            <button class="btn-link" style="margin-top: 8px; font-size: 12px;" onclick="togglePassword('${account.id}')">비밀번호 보기</button>
-        </div>
-    `).join('');
+        `;
+    }).join('');
+    
+    // 드래그 앤 드롭 이벤트 초기화
+    initializeDragAndDrop();
+    
+    // 복사 버튼 이벤트 초기화
+    initializeCopyButtons();
+}
+
+// 복사 버튼 이벤트 초기화
+function initializeCopyButtons() {
+    const copyButtons = document.querySelectorAll('.btn-copy');
+    copyButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const text = this.getAttribute('data-copy-text');
+            const targetId = this.getAttribute('data-target-id');
+            copyToClipboard(text, targetId);
+        });
+    });
 }
 
 // 보험정보 렌더링
@@ -696,6 +789,298 @@ async function loadItemForEdit(type, itemId) {
         console.error('데이터 로드 오류:', error);
     }
 }
+
+// 아코디언 토글
+window.toggleAccordion = function(groupId) {
+    const content = document.getElementById(groupId);
+    const icon = document.getElementById(`icon-${groupId}`);
+    
+    if (content.style.display === 'none') {
+        content.style.display = 'block';
+        icon.textContent = '▼';
+    } else {
+        content.style.display = 'none';
+        icon.textContent = '▶';
+    }
+};
+
+// 그룹 이름 업데이트
+window.updateGroupName = async function(groupId, newName, originalKey) {
+    const groupElement = document.querySelector(`[data-group-id="${groupId}"]`).closest('.accordion-group');
+    if (!groupElement) return;
+    
+    const groupKey = originalKey || groupElement.getAttribute('data-group-key');
+    const newGroupKey = newName.trim() || '기타';
+    
+    if (newGroupKey === groupKey) return;
+    
+    try {
+        const user = auth.currentUser;
+        if (!user) return;
+        
+        // 그룹 이름을 로컬 스토리지에 저장 (표시용)
+        const groupNames = JSON.parse(localStorage.getItem('accountGroupNames') || '{}');
+        groupNames[groupKey] = newGroupKey;
+        localStorage.setItem('accountGroupNames', JSON.stringify(groupNames));
+        
+        // 데이터 다시 로드하여 반영
+        setTimeout(() => {
+            loadData();
+        }, 300);
+    } catch (error) {
+        console.error('그룹 이름 업데이트 오류:', error);
+    }
+};
+
+// 드래그 앤 드롭 초기화
+function initializeDragAndDrop() {
+    const groups = document.querySelectorAll('.accordion-group');
+    const accountItems = document.querySelectorAll('.account-item');
+    
+    // 그룹 드래그 앤 드롭
+    groups.forEach(group => {
+        const dragHandle = group.querySelector('.drag-handle');
+        if (dragHandle) {
+            dragHandle.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+                group.draggable = true;
+            });
+            dragHandle.addEventListener('mouseup', () => {
+                group.draggable = false;
+            });
+        }
+        group.addEventListener('dragstart', handleGroupDragStart);
+        group.addEventListener('dragover', handleGroupDragOver);
+        group.addEventListener('drop', handleGroupDrop);
+        group.addEventListener('dragend', handleGroupDragEnd);
+    });
+    
+    // 계정 항목 드래그 앤 드롭
+    accountItems.forEach(item => {
+        const dragHandle = item.querySelector('.drag-handle-small');
+        if (dragHandle) {
+            dragHandle.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+                item.draggable = true;
+            });
+            dragHandle.addEventListener('mouseup', () => {
+                item.draggable = false;
+            });
+        }
+        item.addEventListener('dragstart', handleAccountDragStart);
+        item.addEventListener('dragover', handleAccountDragOver);
+        item.addEventListener('drop', handleAccountDrop);
+        item.addEventListener('dragend', handleAccountDragEnd);
+    });
+}
+
+let draggedGroup = null;
+let draggedAccount = null;
+
+// 그룹 드래그 핸들러
+function handleGroupDragStart(e) {
+    draggedGroup = this;
+    this.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', this.innerHTML);
+}
+
+function handleGroupDragOver(e) {
+    if (!draggedGroup || draggedGroup === this) return;
+    
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    
+    const container = this.parentNode;
+    const afterElement = getDragAfterElement(container, e.clientY, '.accordion-group');
+    
+    if (afterElement == null) {
+        container.appendChild(draggedGroup);
+    } else {
+        container.insertBefore(draggedGroup, afterElement);
+    }
+}
+
+function handleGroupDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    return false;
+}
+
+function handleGroupDragEnd(e) {
+    this.classList.remove('dragging');
+    draggedGroup = null;
+    
+    // 순서 저장
+    saveGroupOrder();
+}
+
+// 계정 항목 드래그 핸들러
+function handleAccountDragStart(e) {
+    // 버튼 클릭 시 드래그 방지
+    if (e.target.classList.contains('btn-icon-small') || e.target.closest('.btn-icon-small')) {
+        e.preventDefault();
+        return;
+    }
+    draggedAccount = this;
+    this.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', this.innerHTML);
+}
+
+function handleAccountDragOver(e) {
+    if (!draggedAccount || draggedAccount === this) return;
+    
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    
+    const container = this.parentNode;
+    const afterElement = getDragAfterElement(container, e.clientY, '.account-item');
+    
+    if (afterElement == null) {
+        container.appendChild(draggedAccount);
+    } else {
+        container.insertBefore(draggedAccount, afterElement);
+    }
+}
+
+function handleAccountDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    return false;
+}
+
+function handleAccountDragEnd(e) {
+    this.classList.remove('dragging');
+    draggedAccount = null;
+}
+
+// 드래그 후 위치 계산
+function getDragAfterElement(container, y, selector) {
+    const draggableElements = [...container.querySelectorAll(`${selector}:not(.dragging)`)];
+    
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+// 그룹 순서 저장
+async function saveGroupOrder() {
+    const groups = document.querySelectorAll('.accordion-group');
+    const user = auth.currentUser;
+    if (!user) return;
+    
+    try {
+        // 그룹 순서를 데이터베이스에 저장 (선택적)
+        // 여기서는 로컬 스토리지에 저장하거나 데이터베이스에 order 필드 추가 가능
+        const order = Array.from(groups).map((group, index) => ({
+            key: group.getAttribute('data-group-key'),
+            order: index
+        }));
+        
+        localStorage.setItem('accountGroupOrder', JSON.stringify(order));
+    } catch (error) {
+        console.error('순서 저장 오류:', error);
+    }
+}
+
+// 클립보드에 복사
+window.copyToClipboard = async function(text, elementId) {
+    if (!text) return;
+    
+    // HTML 엔티티 디코딩
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = text;
+    const decodedText = textarea.value;
+    
+    try {
+        await navigator.clipboard.writeText(decodedText);
+        
+        // 복사 성공 피드백
+        const element = document.getElementById(elementId);
+        if (element) {
+            const originalText = element.textContent;
+            element.textContent = '복사됨!';
+            element.classList.add('copied');
+            
+            setTimeout(() => {
+                element.textContent = originalText;
+                element.classList.remove('copied');
+            }, 1500);
+        }
+        
+        // 토스트 메시지 표시
+        showToast('클립보드에 복사되었습니다');
+    } catch (error) {
+        console.error('복사 실패:', error);
+        // 폴백: 구식 방법
+        const textArea = document.createElement('textarea');
+        textArea.value = decodedText;
+        textArea.style.position = 'fixed';
+        textArea.style.opacity = '0';
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            showToast('클립보드에 복사되었습니다');
+            
+            // 복사 성공 피드백
+            const element = document.getElementById(elementId);
+            if (element) {
+                const originalText = element.textContent;
+                element.textContent = '복사됨!';
+                element.classList.add('copied');
+                
+                setTimeout(() => {
+                    element.textContent = originalText;
+                    element.classList.remove('copied');
+                }, 1500);
+            }
+        } catch (err) {
+            showToast('복사에 실패했습니다', 'error');
+        }
+        document.body.removeChild(textArea);
+    }
+};
+
+// 토스트 메시지 표시
+function showToast(message, type = 'success') {
+    // 기존 토스트 제거
+    const existingToast = document.querySelector('.toast');
+    if (existingToast) {
+        existingToast.remove();
+    }
+    
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    // 애니메이션
+    setTimeout(() => {
+        toast.classList.add('show');
+    }, 10);
+    
+    // 자동 제거
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+            toast.remove();
+        }, 300);
+    }, 2000);
+}
+
+// 계정 항목 상세 정보 토글
+window.toggleAccountDetails = function(element) {
+    element.classList.toggle('expanded');
+};
 
 // 전역 함수들
 window.editItem = function(type, itemId) {

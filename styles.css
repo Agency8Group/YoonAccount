@@ -581,6 +581,389 @@ body {
     gap: 16px;
 }
 
+/* 아코디언 컨테이너 */
+.accordion-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: calc(100vh - 300px);
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.accordion-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.accordion-container::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+}
+
+.accordion-container::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+}
+
+/* 아코디언 그룹 */
+.accordion-group {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: all var(--transition-base);
+    cursor: move;
+    margin-bottom: 8px;
+}
+
+.accordion-group:hover {
+    border-color: var(--accent);
+    box-shadow: var(--shadow-md);
+}
+
+.accordion-group.dragging {
+    opacity: 0.5;
+}
+
+.accordion-group:last-child {
+    margin-bottom: 0;
+}
+
+/* 아코디언 헤더 */
+.accordion-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 18px;
+    cursor: pointer;
+    user-select: none;
+    transition: background var(--transition-fast);
+    min-height: 52px;
+}
+
+.accordion-header:hover {
+    background: var(--card-hover);
+}
+
+.accordion-header-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+}
+
+.drag-handle {
+    color: var(--text-secondary);
+    font-size: 18px;
+    cursor: grab;
+    user-select: none;
+    flex-shrink: 0;
+    padding: 4px;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+}
+
+.drag-handle:hover {
+    color: var(--text-primary);
+    background: var(--bg-tertiary);
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+.drag-handle-small {
+    color: var(--text-secondary);
+    font-size: 14px;
+    cursor: grab;
+    user-select: none;
+    flex-shrink: 0;
+    padding: 2px;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+}
+
+.drag-handle-small:hover {
+    color: var(--text-primary);
+    background: var(--bg-tertiary);
+}
+
+.drag-handle-small:active {
+    cursor: grabbing;
+}
+
+.group-name-input {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-primary);
+    font-size: 15px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    flex: 1;
+    min-width: 0;
+    transition: all var(--transition-fast);
+    max-width: 200px;
+}
+
+.group-name-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: var(--bg-tertiary);
+    box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.1);
+}
+
+.group-count {
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    flex-shrink: 0;
+    background: var(--bg-tertiary);
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-left: 4px;
+}
+
+.group-url {
+    color: var(--accent);
+    font-size: 12px;
+    text-decoration: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 200px;
+    flex-shrink: 1;
+}
+
+.group-url:hover {
+    text-decoration: underline;
+}
+
+.accordion-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.accordion-icon {
+    color: var(--text-secondary);
+    font-size: 14px;
+    transition: transform var(--transition-fast);
+}
+
+/* 아코디언 콘텐츠 */
+.accordion-content {
+    border-top: 1px solid var(--border);
+    padding: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height var(--transition-base);
+}
+
+.accordion-content[style*="display: block"] {
+    max-height: 10000px;
+    overflow-y: auto;
+    max-height: 80vh;
+}
+
+.accordion-content[style*="display: block"]::-webkit-scrollbar {
+    width: 6px;
+}
+
+.accordion-content[style*="display: block"]::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+}
+
+/* 계정 항목 */
+.account-item {
+    border-bottom: 1px solid var(--border);
+    transition: all var(--transition-fast);
+    cursor: default;
+}
+
+.account-item:last-child {
+    border-bottom: none;
+}
+
+.account-item:hover {
+    background: var(--card-hover);
+}
+
+.account-item.dragging {
+    opacity: 0.5;
+}
+
+.account-item.expanded {
+    background: var(--bg-tertiary);
+}
+
+.account-item-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 18px;
+}
+
+.account-item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.account-item-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: var(--text-primary);
+    line-height: 1.4;
+}
+
+.account-item-credentials {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.credential-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    padding: 4px 0;
+    min-height: 28px;
+}
+
+.credential-label {
+    color: var(--text-secondary);
+    font-weight: 500;
+    min-width: 60px;
+    flex-shrink: 0;
+}
+
+.credential-value {
+    color: var(--text-primary);
+    font-family: 'Courier New', 'Consolas', 'Monaco', monospace;
+    flex: 1;
+    min-width: 0;
+    word-break: break-all;
+    transition: color var(--transition-fast);
+    font-size: 13px;
+    line-height: 1.5;
+    padding: 2px 0;
+}
+
+.credential-value.copied {
+    color: var(--success);
+}
+
+.btn-copy {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+    flex-shrink: 0;
+    min-width: 32px;
+    min-height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.btn-copy:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+    transform: scale(1.05);
+}
+
+.btn-copy:active {
+    transform: scale(0.95);
+}
+
+.account-item-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+    align-items: flex-start;
+    padding-top: 2px;
+}
+
+.btn-icon-small {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 6px;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+    min-width: 32px;
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.btn-icon-small:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.btn-icon-small:active {
+    background: var(--card-hover);
+    transform: scale(0.95);
+}
+
+.account-item-details {
+    padding: 0 20px 16px 52px;
+    display: block;
+    border-top: 1px solid var(--border);
+    margin-top: 8px;
+    padding-top: 12px;
+}
+
+/* 토스트 메시지 */
+.toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 12px 24px;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    z-index: 10000;
+    opacity: 0;
+    transition: all var(--transition-base);
+    font-size: 14px;
+    font-weight: 500;
+    pointer-events: none;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.toast-success {
+    border-color: var(--success);
+    background: rgba(52, 199, 89, 0.1);
+}
+
+.toast-error {
+    border-color: var(--error);
+    background: rgba(255, 59, 48, 0.1);
+}
+
 .account-card, .insurance-card {
     background: var(--card-bg);
     border: 1px solid var(--border);
@@ -695,12 +1078,11 @@ body {
 }
 
 .card-notes {
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid var(--border);
-    font-size: 13px;
+    margin-top: 8px;
+    padding-top: 8px;
+    font-size: 12px;
     color: var(--text-secondary);
-    line-height: 1.5;
+    line-height: 1.6;
 }
 
 /* 모달 */
@@ -886,6 +1268,15 @@ body {
     padding: 12px 24px;
 }
 
+/* 성능 최적화 */
+.accordion-content {
+    will-change: max-height;
+}
+
+.account-item {
+    will-change: transform;
+}
+
 /* 반응형 */
 @media (max-width: 768px) {
     .login-box {
@@ -929,6 +1320,102 @@ body {
     
     .account-card, .insurance-card {
         padding: 18px;
+    }
+    
+    .accordion-container {
+        gap: 6px;
+    }
+    
+    .accordion-group {
+        margin-bottom: 6px;
+    }
+    
+    .accordion-container {
+        max-height: calc(100vh - 250px);
+    }
+    
+    .accordion-header {
+        padding: 12px 14px;
+        min-height: 48px;
+    }
+    
+    .accordion-header-content {
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+    
+    .group-name-input {
+        font-size: 14px;
+        padding: 3px 6px;
+        max-width: 150px;
+    }
+    
+    .group-count {
+        font-size: 12px;
+        padding: 2px 6px;
+    }
+    
+    .group-url {
+        font-size: 11px;
+        max-width: 120px;
+        order: 3;
+        width: 100%;
+        margin-top: 4px;
+    }
+    
+    .account-item-content {
+        padding: 12px 14px;
+        flex-wrap: wrap;
+    }
+    
+    .account-item-title {
+        font-size: 14px;
+        margin-bottom: 8px;
+    }
+    
+    .account-item-credentials {
+        width: 100%;
+        margin-top: 8px;
+        order: 2;
+    }
+    
+    .credential-row {
+        font-size: 12px;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    
+    .credential-label {
+        min-width: 45px;
+        font-size: 11px;
+    }
+    
+    .credential-value {
+        font-size: 12px;
+        flex: 1;
+        min-width: 100px;
+    }
+    
+    .btn-copy {
+        font-size: 12px;
+        padding: 3px 6px;
+        min-width: 28px;
+        min-height: 24px;
+    }
+    
+    .account-item-details {
+        padding: 0 14px 12px 44px;
+    }
+    
+    .account-item-actions {
+        margin-top: 8px;
+        width: 100%;
+        justify-content: flex-end;
+        order: 1;
+    }
+    
+    .drag-handle-small {
+        order: 0;
     }
     
     .nav-content {
