@@ -63,6 +63,9 @@
                 <div class="header-section">
                     <h1>내 계정 관리</h1>
                     <div class="header-actions">
+                        <div class="search-container">
+                            <input type="text" id="globalSearchInput" placeholder="서비스명, 아이디, 보험사, 메모 등 전체 검색" />
+                        </div>
                         <div class="excel-actions">
                             <button id="downloadExcelBtn" class="btn-secondary" title="엑셀 다운로드">
                                 <span class="icon">📥</span>
@@ -84,6 +87,7 @@
                 <div class="tabs">
                     <button class="tab active" data-tab="accounts">계정</button>
                     <button class="tab" data-tab="insurance">보험정보</button>
+                    <button class="tab" data-tab="extras">기타정보</button>
                 </div>
 
                 <!-- 계정 탭 -->
@@ -97,6 +101,13 @@
                 <div id="insuranceTab" class="tab-content">
                     <div class="cards-grid" id="insuranceList">
                         <!-- 보험정보 카드들이 여기에 동적으로 추가됩니다 -->
+                    </div>
+                </div>
+
+                <!-- 기타정보 탭 -->
+                <div id="extrasTab" class="tab-content">
+                    <div class="cards-grid" id="extrasList">
+                        <!-- 기타정보 카드들이 여기에 동적으로 추가됩니다 -->
                     </div>
                 </div>
             </div>

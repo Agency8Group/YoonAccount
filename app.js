@@ -152,6 +152,23 @@ window.addEventListener('load', () => {
     setInterval(checkFirebaseConnection, 30000);
 });
 
+// 전역 검색 인풋 이벤트
+document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('globalSearchInput');
+    if (searchInput) {
+        let searchTimeout = null;
+        searchInput.addEventListener('input', () => {
+            if (searchTimeout) {
+                clearTimeout(searchTimeout);
+            }
+            // 타이핑 중 성능 보호용 디바운스
+            searchTimeout = setTimeout(() => {
+                applySearchFilter();
+            }, 150);
+        });
+    }
+});
+
 // 인증 상태 확인
 auth.onAuthStateChanged((user) => {
     if (user) {
@@ -307,8 +324,10 @@ document.querySelectorAll('.tab').forEach(tab => {
         
         if (tabName === 'accounts') {
             document.getElementById('accountsTab').classList.add('active');
-        } else {
+        } else if (tabName === 'insurance') {
             document.getElementById('insuranceTab').classList.add('active');
+        } else if (tabName === 'extras') {
+            document.getElementById('extrasTab').classList.add('active');
         }
     });
 });
@@ -319,7 +338,13 @@ let editingItemId = null;
 
 document.getElementById('addAccountBtn').addEventListener('click', () => {
     const activeTab = document.querySelector('.tab.active').dataset.tab;
-    openModal(activeTab === 'accounts' ? 'account' : 'insurance');
+    if (activeTab === 'accounts') {
+        openModal('account');
+    } else if (activeTab === 'insurance') {
+        openModal('insurance');
+    } else if (activeTab === 'extras') {
+        openModal('extra');
+    }
 });
 
 document.getElementById('closeModal').addEventListener('click', closeModal);
@@ -341,15 +366,22 @@ function openModal(type, itemId = null) {
         insuranceFields.style.display = 'block';
         insuranceFields2.style.display = 'block';
         accountSiteUrlField.style.display = 'none';
-        serviceNameLabel.textContent = '서비스/사이트명';
+        serviceNameLabel.textContent = '보험서비스';
         notesLabel.textContent = '메모';
+    } else if (type === 'extra') {
+        document.getElementById('modalTitle').textContent = itemId ? '기타정보 수정' : '새 기타정보 추가';
+        insuranceFields.style.display = 'none';
+        insuranceFields2.style.display = 'none';
+        accountSiteUrlField.style.display = 'none';
+        serviceNameLabel.textContent = '항목명';
+        notesLabel.textContent = '내용';
     } else {
         document.getElementById('modalTitle').textContent = itemId ? '계정 수정' : '새 계정 추가';
         insuranceFields.style.display = 'none';
         insuranceFields2.style.display = 'none';
         accountSiteUrlField.style.display = 'block';
         serviceNameLabel.textContent = '서비스 명';
-        notesLabel.textContent = '특이사항';
+        notesLabel.textContent = '메모';
     }
     
     if (itemId) {
@@ -417,38 +449,77 @@ document.getElementById('accountForm').addEventListener('submit', async (e) => {
         submitBtn.textContent = '저장 중...';
     }
     
-    const itemData = {
-        serviceName: document.getElementById('serviceName').value.trim(),
-        username: document.getElementById('username').value.trim(),
-        password: document.getElementById('password').value.trim(),
-        notes: document.getElementById('notes').value.trim(),
-        type: currentItemType,
-        userId: user.uid,
-        updatedAt: Date.now()
-    };
-    
-    // 필수 필드 검증
-    if (!itemData.serviceName || !itemData.username || !itemData.password) {
-        alert('서비스 명, 아이디, 비밀번호는 필수 입력 항목입니다.');
-        if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.textContent = originalBtnText;
-        }
-        return;
-    }
-    
-    // 계정인 경우 사이트 주소 추가
+    let itemData = {};
+    const serviceName = document.getElementById('serviceName').value.trim();
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
+    const notes = document.getElementById('notes').value.trim();
+
     if (currentItemType === 'account') {
+        // 계정: 서비스 명, 아이디, 비밀번호 필수
+        if (!serviceName || !username || !password) {
+            alert('서비스 명, 아이디, 비밀번호는 필수 입력 항목입니다.');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalBtnText;
+            }
+            return;
+        }
+
+        itemData = {
+            serviceName,
+            username,
+            password,
+            notes,
+            type: currentItemType,
+            userId: user.uid,
+            updatedAt: Date.now()
+        };
+
         const siteUrl = document.getElementById('siteUrl').value.trim();
         if (siteUrl) {
             itemData.siteUrl = siteUrl;
         }
-    }
-    
-    // 보험정보인 경우 추가 필드
-    if (currentItemType === 'insurance') {
-        itemData.insuranceCompany = document.getElementById('insuranceCompany').value.trim();
-        itemData.insuranceNumber = document.getElementById('insuranceNumber').value.trim();
+    } else if (currentItemType === 'insurance') {
+        // 보험: 서비스/사이트명, 아이디/이메일은 필수 (비밀번호 선택)
+        if (!serviceName || !username) {
+            alert('서비스/사이트명과 아이디(이메일)는 필수 입력 항목입니다.');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalBtnText;
+            }
+            return;
+        }
+
+        itemData = {
+            serviceName,
+            username,
+            password,
+            notes,
+            type: currentItemType,
+            userId: user.uid,
+            updatedAt: Date.now(),
+            insuranceCompany: document.getElementById('insuranceCompany').value.trim(),
+            insuranceNumber: document.getElementById('insuranceNumber').value.trim()
+        };
+    } else if (currentItemType === 'extra') {
+        // 기타정보: 항목명 또는 내용 둘 중 하나만 있어도 저장
+        if (!serviceName && !notes) {
+            alert('항목명 또는 내용을 입력해주세요.');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalBtnText;
+            }
+            return;
+        }
+
+        itemData = {
+            serviceName,
+            notes,
+            type: currentItemType,
+            userId: user.uid,
+            updatedAt: Date.now()
+        };
     }
     
     console.log('저장할 데이터:', itemData);
@@ -549,30 +620,33 @@ async function loadData() {
         
         console.log('데이터 스냅샷:', snapshot.exists() ? '존재함' : '없음');
         
-        const accounts = [];
-        const insurance = [];
+        window.__allAccounts = [];
+        window.__allInsurance = [];
+        window.__allExtras = [];
         
         if (snapshot.exists()) {
             snapshot.forEach((childSnapshot) => {
                 const data = { id: childSnapshot.key, ...childSnapshot.val() };
                 console.log('데이터 항목:', data);
                 if (data.type === 'account') {
-                    accounts.push(data);
-                } else {
-                    insurance.push(data);
+                    window.__allAccounts.push(data);
+                } else if (data.type === 'insurance') {
+                    window.__allInsurance.push(data);
+                } else if (data.type === 'extra') {
+                    window.__allExtras.push(data);
                 }
             });
         }
         
-        console.log('로드된 계정 수:', accounts.length);
-        console.log('로드된 보험정보 수:', insurance.length);
+        console.log('로드된 계정 수:', window.__allAccounts.length);
+        console.log('로드된 보험정보 수:', window.__allInsurance.length);
         
         // updatedAt 기준으로 정렬
-        accounts.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-        insurance.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-        
-        renderAccounts(accounts);
-        renderInsurance(insurance);
+        window.__allAccounts.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+        window.__allInsurance.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+        window.__allExtras.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+
+        applySearchFilter(); // 검색어 반영해서 렌더링
     } catch (error) {
         console.error('데이터 로드 오류 상세:', {
             code: error.code,
@@ -604,8 +678,58 @@ function getDomainFromUrl(url) {
     }
 }
 
+// 검색 하이라이트 적용
+function highlightMatches(text, query) {
+    if (!query) return escapeHtml(text || '');
+    const safeText = text || '';
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(escapedQuery, 'gi');
+    return escapeHtml(safeText).replace(regex, (match) => `<span class="highlight">${match}</span>`);
+}
+
+// 검색 필터 적용 (계정 + 보험 + 기타)
+function applySearchFilter() {
+    const queryInput = document.getElementById('globalSearchInput');
+    const keyword = (queryInput ? queryInput.value : '').trim().toLowerCase();
+
+    const accounts = (window.__allAccounts || []).filter(item => {
+        if (!keyword) return true;
+        const target =
+            (item.siteUrl || '') +
+            (item.serviceName || '') +
+            (item.username || '') +
+            (item.password || '') +
+            (item.notes || '');
+        return target.toLowerCase().includes(keyword);
+    });
+
+    const insurance = (window.__allInsurance || []).filter(item => {
+        if (!keyword) return true;
+        const target =
+            (item.serviceName || '') +
+            (item.insuranceCompany || '') +
+            (item.insuranceNumber || '') +
+            (item.username || '') +
+            (item.password || '') +
+            (item.notes || '');
+        return target.toLowerCase().includes(keyword);
+    });
+
+    const extras = (window.__allExtras || []).filter(item => {
+        if (!keyword) return true;
+        const target =
+            (item.serviceName || '') +
+            (item.notes || '');
+        return target.toLowerCase().includes(keyword);
+    });
+    
+    renderAccounts(accounts, keyword);
+    renderInsurance(insurance, keyword);
+    renderExtras(extras, keyword);
+}
+
 // 계정 렌더링 (아코디언 형태)
-function renderAccounts(accounts) {
+function renderAccounts(accounts, keyword = '') {
     const container = document.getElementById('accountsList');
     
     if (accounts.length === 0) {
@@ -673,16 +797,16 @@ function renderAccounts(accounts) {
                             <div class="account-item-content">
                                 <span class="drag-handle-small" onclick="event.stopPropagation()" title="드래그하여 순서 변경">☰</span>
                                 <div class="account-item-info" onclick="event.stopPropagation()">
-                                    <div class="account-item-title">${escapeHtml(account.serviceName)}</div>
+                                    <div class="account-item-title">${highlightMatches(account.serviceName || '', keyword)}</div>
                                     <div class="account-item-credentials">
                                         <div class="credential-row">
                                             <span class="credential-label">아이디:</span>
-                                            <span class="credential-value" id="username-${account.id}">${escapeHtml(account.username || '')}</span>
+                                            <span class="credential-value" id="username-${account.id}">${highlightMatches(account.username || '', keyword)}</span>
                                             <button class="btn-copy" data-copy-text="${escapeHtml(account.username || '')}" data-target-id="username-${account.id}" title="아이디 복사">📋</button>
                                         </div>
                                         <div class="credential-row">
                                             <span class="credential-label">비밀번호:</span>
-                                            <span class="credential-value" id="password-${account.id}">${escapeHtml(account.password || '')}</span>
+                                            <span class="credential-value" id="password-${account.id}">${highlightMatches(account.password || '', keyword)}</span>
                                             <button class="btn-copy" data-copy-text="${escapeHtml(account.password || '')}" data-target-id="password-${account.id}" title="비밀번호 복사">📋</button>
                                         </div>
                                     </div>
@@ -694,7 +818,7 @@ function renderAccounts(accounts) {
                             </div>
                             ${account.notes ? `
                             <div class="account-item-details" style="display: block;">
-                                <div class="card-notes"><strong>특이사항:</strong> ${escapeHtml(account.notes)}</div>
+                                <div class="card-notes"><strong>메모:</strong> ${highlightMatches(account.notes, keyword)}</div>
                             </div>
                             ` : ''}
                         </div>
@@ -725,7 +849,7 @@ function initializeCopyButtons() {
 }
 
 // 보험정보 렌더링
-function renderInsurance(insuranceList) {
+function renderInsurance(insuranceList, keyword = '') {
     const container = document.getElementById('insuranceList');
     
     if (insuranceList.length === 0) {
@@ -737,8 +861,8 @@ function renderInsurance(insuranceList) {
         <div class="insurance-card">
             <div class="card-header">
                 <div>
-                    <div class="card-title">${escapeHtml(insurance.insuranceCompany || insurance.serviceName)}</div>
-                    <div class="card-subtitle">${escapeHtml(insurance.insuranceNumber || '')}</div>
+                    <div class="card-title">${highlightMatches(insurance.insuranceCompany || insurance.serviceName || '', keyword)}</div>
+                    <div class="card-subtitle">${highlightMatches(insurance.insuranceNumber || '', keyword)}</div>
                 </div>
                 <div class="card-actions">
                     <button class="btn-icon" onclick="editItem('insurance', '${insurance.id}')" title="수정">✏️</button>
@@ -748,7 +872,7 @@ function renderInsurance(insuranceList) {
             <div class="card-info">
                 <div class="info-item">
                     <span class="info-label">계정:</span>
-                    <span class="info-value">${escapeHtml(insurance.username)}</span>
+                    <span class="info-value">${highlightMatches(insurance.username || '', keyword)}</span>
                 </div>
                 ${insurance.password ? `
                 <div class="info-item">
@@ -757,8 +881,33 @@ function renderInsurance(insuranceList) {
                 </div>
                 ` : ''}
             </div>
-            ${insurance.notes ? `<div class="card-notes">${escapeHtml(insurance.notes)}</div>` : ''}
+            ${insurance.notes ? `<div class="card-notes">${highlightMatches(insurance.notes, keyword)}</div>` : ''}
             ${insurance.password ? `<button class="btn-link" style="margin-top: 8px; font-size: 12px;" onclick="togglePassword('${insurance.id}')">비밀번호 보기</button>` : ''}
+        </div>
+    `).join('');
+}
+
+// 기타정보 렌더링
+function renderExtras(extrasList, keyword = '') {
+    const container = document.getElementById('extrasList');
+    
+    if (extrasList.length === 0) {
+        container.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 40px;">등록된 기타 정보가 없습니다.</p>';
+        return;
+    }
+    
+    container.innerHTML = extrasList.map(extra => `
+        <div class="insurance-card">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">${highlightMatches(extra.serviceName || '', keyword)}</div>
+                </div>
+                <div class="card-actions">
+                    <button class="btn-icon" onclick="editItem('extra', '${extra.id}')" title="수정">✏️</button>
+                    <button class="btn-icon" onclick="deleteItem('${extra.id}')" title="삭제">🗑️</button>
+                </div>
+            </div>
+            ${extra.notes ? `<div class="card-notes">${highlightMatches(extra.notes, keyword)}</div>` : ''}
         </div>
     `).join('');
 }
@@ -780,10 +929,15 @@ async function loadItemForEdit(type, itemId) {
         if (type === 'account') {
             // 계정인 경우 사이트 주소 로드
             document.getElementById('siteUrl').value = data.siteUrl || '';
-        } else {
+        } else if (type === 'insurance') {
             // 보험정보인 경우
             document.getElementById('insuranceCompany').value = data.insuranceCompany || '';
             document.getElementById('insuranceNumber').value = data.insuranceNumber || '';
+        } else if (type === 'extra') {
+            // 기타정보는 serviceName, notes만 사용
+            document.getElementById('siteUrl').value = '';
+            document.getElementById('insuranceCompany').value = '';
+            document.getElementById('insuranceNumber').value = '';
         }
     } catch (error) {
         console.error('데이터 로드 오류:', error);
@@ -1160,8 +1314,9 @@ document.getElementById('modal').addEventListener('click', (e) => {
 });
 
 // 엑셀 다운로드
-// TODO(보험정보): 현재는 계정(Accounts)만 엑셀로 내보내며,
-// 보험정보는 반영하지 않습니다. 나중에 보험 엑셀 내보내기 기능을 다시 개발할 것.
+// 시트 구조:
+//  - 1시트: '계정'  → 계정 데이터
+//  - 2시트: '보험정보' → 보험 데이터
 async function downloadExcel() {
     const user = auth.currentUser;
     if (!user) {
@@ -1175,15 +1330,20 @@ async function downloadExcel() {
             .orderByChild('userId')
             .equalTo(user.uid)
             .once('value');
-        
+
         const accounts = [];
-        
+        const insurance = [];
+        const extras = [];
+
         if (snapshot.exists()) {
             snapshot.forEach((childSnapshot) => {
                 const data = { id: childSnapshot.key, ...childSnapshot.val() };
-                // 현재는 계정만 엑셀에 포함 (보험정보는 제외)
                 if (data.type === 'account') {
                     accounts.push(data);
+                } else if (data.type === 'insurance') {
+                    insurance.push(data);
+                } else if (data.type === 'extra') {
+                    extras.push(data);
                 }
             });
         }
@@ -1191,34 +1351,86 @@ async function downloadExcel() {
         // 엑셀 워크북 생성
         const wb = XLSX.utils.book_new();
         
-        // 계정 시트 생성
+        // 계정 시트 생성 (기초 컬럼 고정)
+        const accountBaseRow = {
+            '사이트 주소': '',
+            '서비스 명': '',
+            '아이디 (이메일)': '',
+            '비밀번호': '',
+            '메모': '',
+            '등록일': '',
+            '수정일': ''
+        };
         const accountData = accounts.map(item => ({
             '사이트 주소': item.siteUrl || '',
             '서비스 명': item.serviceName || '',
             '아이디 (이메일)': item.username || '',
             '비밀번호': item.password || '',
-            '특이사항': item.notes || '',
+            '메모': item.notes || '',
             '등록일': item.createdAt ? new Date(item.createdAt).toLocaleString('ko-KR') : '',
             '수정일': item.updatedAt ? new Date(item.updatedAt).toLocaleString('ko-KR') : ''
         }));
-        
-        if (accountData.length > 0) {
-            const accountWs = XLSX.utils.json_to_sheet(accountData);
-            XLSX.utils.book_append_sheet(wb, accountWs, '계정');
-        }
+        const accountWs = XLSX.utils.json_to_sheet(
+            accountData.length > 0 ? accountData : [accountBaseRow]
+        );
+        XLSX.utils.book_append_sheet(wb, accountWs, '계정');
 
-        // 빈 경우 안내 문구 시트라도 생성
-        if (accountData.length === 0) {
-            const emptyWs = XLSX.utils.json_to_sheet([{ '메시지': '등록된 데이터가 없습니다.' }]);
-            XLSX.utils.book_append_sheet(wb, emptyWs, '계정');
-        }
+        // 보험 시트 생성 (2번째 시트, 기초 컬럼 고정)
+        const insuranceBaseRow = {
+            '보험사명': '',
+            '보험서비스': '',
+            '보험번호': '',
+            '아이디(이메일)': '',
+            '비밀번호': '',
+            '메모': '',
+            '등록일': '',
+            '수정일': ''
+        };
+        const insuranceData = insurance.map(item => ({
+            '보험사명': item.insuranceCompany || '',
+            '보험서비스': item.serviceName || '',
+            '보험번호': item.insuranceNumber || '',
+            '아이디(이메일)': item.username || '',
+            '비밀번호': item.password || '',
+            '메모': item.notes || '',
+            '등록일': item.createdAt ? new Date(item.createdAt).toLocaleString('ko-KR') : '',
+            '수정일': item.updatedAt ? new Date(item.updatedAt).toLocaleString('ko-KR') : ''
+        }));
+
+        const insuranceWs = XLSX.utils.json_to_sheet(
+            insuranceData.length > 0 ? insuranceData : [insuranceBaseRow]
+        );
+        XLSX.utils.book_append_sheet(wb, insuranceWs, '보험정보');
+
+        // 3시트: 기타정보 (통관번호, 와이파이 등 자유 입력, 기초 컬럼 고정)
+        const extraBaseRow = {
+            '항목명': '',
+            '내용': '',
+            '등록일': '',
+            '수정일': ''
+        };
+        const extraData = extras.map(item => ({
+            '항목명': item.serviceName || '',
+            '내용': item.notes || '',
+            '등록일': item.createdAt ? new Date(item.createdAt).toLocaleString('ko-KR') : '',
+            '수정일': item.updatedAt ? new Date(item.updatedAt).toLocaleString('ko-KR') : ''
+        }));
+
+        const extraWs = XLSX.utils.json_to_sheet(
+            extraData.length > 0 ? extraData : [extraBaseRow]
+        );
+        XLSX.utils.book_append_sheet(wb, extraWs, '기타정보');
         
         // 파일 다운로드
         const fileName = `계정관리_${new Date().toISOString().split('T')[0]}.xlsx`;
         XLSX.writeFile(wb, fileName);
 
-        // 현재는 계정 개수만 안내
-        alert(`엑셀 파일이 다운로드되었습니다.\n\n계정: ${accounts.length}개`);
+        alert(
+            `엑셀 파일이 다운로드되었습니다.\n\n` +
+            `계정: ${accounts.length}개\n` +
+            `보험정보: ${insurance.length}개\n` +
+            `기타정보: ${extras.length}개`
+        );
     } catch (error) {
         console.error('엑셀 다운로드 오류:', error);
         alert('엑셀 다운로드 중 오류가 발생했습니다.');
@@ -1226,8 +1438,9 @@ async function downloadExcel() {
 }
 
 // 엑셀 업로드
-// TODO(보험정보): 현재는 계정(Accounts)만 업로드 대상이며,
-// 보험정보 시트/컬럼은 무시합니다. 나중에 보험 엑셀 업로드 기능을 다시 개발할 것.
+// 시트 구조(다운로드 포맷과 동일하게 가정):
+//  - 1시트: '계정'      → 계정 데이터
+//  - 2시트: '보험정보'  → 보험 데이터
 async function uploadExcel(file) {
     const user = auth.currentUser;
     if (!user) {
@@ -1252,14 +1465,16 @@ async function uploadExcel(file) {
                 let totalSkipped = 0;
                 const errors = [];
 
-                // 각 시트 처리 (현재는 모든 시트를 "계정" 데이터로만 취급)
-                workbook.SheetNames.forEach(sheetName => {
-                    const worksheet = workbook.Sheets[sheetName];
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                const sheetNames = workbook.SheetNames;
 
-                    jsonData.forEach((row, index) => {
+                // 1시트: 계정
+                if (sheetNames.length >= 1) {
+                    const accountSheetName = sheetNames[0];
+                    const accountSheet = workbook.Sheets[accountSheetName];
+                    const accountRows = XLSX.utils.sheet_to_json(accountSheet);
+
+                    accountRows.forEach((row, index) => {
                         try {
-                            // 계정용 컬럼만 사용 (보험 관련 컬럼은 무시)
                             const serviceName =
                                 row['서비스 명'] ||
                                 row['사이트명'] ||
@@ -1276,44 +1491,157 @@ async function uploadExcel(file) {
 
                             if (!serviceName || !username || !password) {
                                 totalSkipped++;
-                                errors.push(`${sheetName} 시트 ${index + 2}행: 필수 필드 누락 (서비스 명, 아이디, 비밀번호 필요)`);
+                                errors.push(`계정 시트 ${index + 2}행: 필수 필드 누락 (서비스 명, 아이디, 비밀번호 필요)`);
                                 return;
                             }
 
-                            // 데이터 준비 (항상 type: 'account')
                             const itemData = {
                                 serviceName: String(serviceName).trim(),
                                 username: String(username).trim(),
                                 password: String(password).trim(),
-                                notes: String(row['특이사항'] || row['메모'] || '').trim(),
+                                // 기존 '특이사항' 컬럼도 계속 지원하면서, 새 기본 컬럼은 '메모'로 사용
+                                notes: String(row['메모'] || row['특이사항'] || '').trim(),
                                 type: 'account',
                                 userId: user.uid,
                                 createdAt: Date.now(),
                                 updatedAt: Date.now()
                             };
 
-                            // 사이트 주소 추가 (계정 컬럼)
                             if (row['사이트 주소']) {
                                 itemData.siteUrl = String(row['사이트 주소']).trim();
                             }
 
-                            // Realtime Database에 추가 (Promise 배열에 추가)
                             const promise = db.ref('items').push(itemData)
                                 .then(() => {
                                     totalAdded++;
                                 })
                                 .catch(error => {
                                     totalSkipped++;
-                                    errors.push(`${sheetName} 시트 ${index + 2}행: ${error.message}`);
+                                    errors.push(`계정 시트 ${index + 2}행: ${error.message}`);
                                 });
 
                             promises.push(promise);
                         } catch (error) {
                             totalSkipped++;
-                            errors.push(`${sheetName} 시트 ${index + 2}행: ${error.message}`);
+                            errors.push(`계정 시트 ${index + 2}행: ${error.message}`);
                         }
                     });
-                });
+                }
+
+                // 2시트: 보험정보
+                if (sheetNames.length >= 2) {
+                    const insuranceSheetName = sheetNames[1];
+                    const insuranceSheet = workbook.Sheets[insuranceSheetName];
+                    const insuranceRows = XLSX.utils.sheet_to_json(insuranceSheet);
+                    
+                    insuranceRows.forEach((row, index) => {
+                        try {
+                            const serviceName =
+                                row['보험서비스'] ||
+                                row['서비스/사이트명'] ||
+                                row['서비스 명'] ||
+                                row['서비스'] ||
+                                '';
+                            const insuranceCompany =
+                                row['보험사명'] || '';
+                            const insuranceNumber =
+                                row['보험번호'] || '';
+                            const username =
+                                row['아이디(이메일)'] ||
+                                row['아이디/이메일'] ||
+                                row['아이디'] ||
+                                row['이메일'] ||
+                                '';
+                            const password = row['비밀번호'] || '';
+
+                            // 보험은 "서비스/사이트명, 아이디/이메일"만 필수로 보고, 비밀번호는 선택
+                            if (!serviceName || !username) {
+                                totalSkipped++;
+                                errors.push(`보험정보 시트 ${index + 2}행: 필수 필드 누락 (서비스/사이트명, 아이디/이메일 필요)`);
+                                return;
+                            }
+
+                            const itemData = {
+                                serviceName: String(serviceName).trim(),
+                                insuranceCompany: String(insuranceCompany).trim(),
+                                insuranceNumber: String(insuranceNumber).trim(),
+                                username: String(username).trim(),
+                                password: String(password || '').trim(),
+                                notes: String(row['메모'] || '').trim(),
+                                type: 'insurance',
+                                userId: user.uid,
+                                createdAt: Date.now(),
+                                updatedAt: Date.now()
+                            };
+
+                            const promise = db.ref('items').push(itemData)
+                                .then(() => {
+                                    totalAdded++;
+                                })
+                                .catch(error => {
+                                    totalSkipped++;
+                                    errors.push(`보험정보 시트 ${index + 2}행: ${error.message}`);
+                                });
+
+                            promises.push(promise);
+                        } catch (error) {
+                            totalSkipped++;
+                            errors.push(`보험정보 시트 ${index + 2}행: ${error.message}`);
+                        }
+                    });
+                }
+
+                // 3시트: 기타정보 (통관번호 / 와이파이 등 단순 정보)
+                if (sheetNames.length >= 3) {
+                    const extraSheetName = sheetNames[2];
+                    const extraSheet = workbook.Sheets[extraSheetName];
+                    const extraRows = XLSX.utils.sheet_to_json(extraSheet);
+
+                    extraRows.forEach((row, index) => {
+                        try {
+                            const name =
+                                row['항목명'] ||
+                                row['이름'] ||
+                                row['구분'] ||
+                                '';
+                            const value =
+                                row['내용'] ||
+                                row['값'] ||
+                                row['메모'] ||
+                                '';
+
+                            // 항목명 또는 내용 둘 중 하나만 있어도 저장하도록 허용
+                            if (!name && !value) {
+                                totalSkipped++;
+                                errors.push(`기타정보 시트 ${index + 2}행: 항목명/내용이 모두 비어 있습니다.`);
+                                return;
+                            }
+
+                            const itemData = {
+                                serviceName: String(name || '').trim(), // 이름처럼 사용
+                                notes: String(value || '').trim(),      // 내용
+                                type: 'extra',
+                                userId: user.uid,
+                                createdAt: Date.now(),
+                                updatedAt: Date.now()
+                            };
+
+                            const promise = db.ref('items').push(itemData)
+                                .then(() => {
+                                    totalAdded++;
+                                })
+                                .catch(error => {
+                                    totalSkipped++;
+                                    errors.push(`기타정보 시트 ${index + 2}행: ${error.message}`);
+                                });
+
+                            promises.push(promise);
+                        } catch (error) {
+                            totalSkipped++;
+                            errors.push(`기타정보 시트 ${index + 2}행: ${error.message}`);
+                        }
+                    });
+                }
                 
                 // 모든 Promise 완료 대기
                 await Promise.allSettled(promises);
