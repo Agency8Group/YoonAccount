@@ -899,7 +899,7 @@ function initializeCopyButtons() {
     });
 }
 
-// 보험정보 렌더링
+// 보험정보 렌더링 (아코디언 형태)
 function renderInsurance(insuranceList, keyword = '') {
     const container = document.getElementById('insuranceList');
     
@@ -907,38 +907,74 @@ function renderInsurance(insuranceList, keyword = '') {
         container.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 40px;">등록된 보험정보가 없습니다.</p>';
         return;
     }
-    
-    container.innerHTML = insuranceList.map(insurance => `
-        <div class="insurance-card">
-            <div class="card-header">
-                <div>
-                    <div class="card-title">${highlightMatches(insurance.insuranceCompany || insurance.serviceName || '', keyword)}</div>
-                    <div class="card-subtitle">${highlightMatches(insurance.insuranceNumber || '', keyword)}</div>
+
+    const groupId = 'insurance-group';
+
+    container.innerHTML = `
+        <div class="accordion-group" data-group-key="보험정보" draggable="false">
+            <div class="accordion-header" onclick="toggleAccordion('${groupId}')">
+                <div class="accordion-header-content">
+                    <span class="group-name-input" style="border: none; padding-left: 0; cursor: default;" readonly>보험정보 (${insuranceList.length})</span>
                 </div>
-                <div class="card-actions">
-                    <button class="btn-icon" onclick="editItem('insurance', '${insurance.id}')" title="수정">✏️</button>
-                    <button class="btn-icon" onclick="deleteItem('${insurance.id}')" title="삭제">🗑️</button>
+                <div class="accordion-actions">
+                    <span class="accordion-icon" id="icon-${groupId}">▼</span>
                 </div>
             </div>
-            <div class="card-info">
-                <div class="info-item">
-                    <span class="info-label">계정:</span>
-                    <span class="info-value">${highlightMatches(insurance.username || '', keyword)}</span>
-                </div>
-                ${insurance.password ? `
-                <div class="info-item">
-                    <span class="info-label">비밀번호:</span>
-                    <span class="info-value" id="pwd-${insurance.id}">••••••••</span>
-                </div>
-                ` : ''}
+            <div class="accordion-content" id="${groupId}" style="display: block">
+                ${insuranceList.map(insurance => `
+                    <div class="account-item" draggable="false" data-account-id="${insurance.id}">
+                        <div class="account-item-content">
+                            <div class="account-item-info">
+                                <div class="account-item-title">
+                                    ${highlightMatches(insurance.insuranceCompany || '', keyword)}
+                                </div>
+                                <div class="account-item-credentials">
+                                    <div class="credential-row">
+                                        <span class="credential-label">보험서비스:</span>
+                                        <span class="credential-value">
+                                            ${highlightMatches(insurance.serviceName || '', keyword)}
+                                        </span>
+                                    </div>
+                                    <div class="credential-row">
+                                        <span class="credential-label">보험번호:</span>
+                                        <span class="credential-value">
+                                            ${highlightMatches(insurance.insuranceNumber || '', keyword)}
+                                        </span>
+                                    </div>
+                                    <div class="credential-row">
+                                        <span class="credential-label">아이디:</span>
+                                        <span class="credential-value">
+                                            ${highlightMatches(insurance.username || '', keyword)}
+                                        </span>
+                                    </div>
+                                    ${insurance.password ? `
+                                    <div class="credential-row">
+                                        <span class="credential-label">비밀번호:</span>
+                                        <span class="credential-value">
+                                            ${highlightMatches(insurance.password || '', keyword)}
+                                        </span>
+                                    </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                            <div class="account-item-actions">
+                                <button class="btn-icon-small" onclick="editItem('insurance', '${insurance.id}')" title="수정">✏️</button>
+                                <button class="btn-icon-small" onclick="deleteItem('${insurance.id}')" title="삭제">🗑️</button>
+                            </div>
+                        </div>
+                        ${insurance.notes ? `
+                        <div class="account-item-details" style="display: block;">
+                            <div class="card-notes"><strong>메모:</strong> ${highlightMatches(insurance.notes, keyword)}</div>
+                        </div>
+                        ` : ''}
+                    </div>
+                `).join('')}
             </div>
-            ${insurance.notes ? `<div class="card-notes">${highlightMatches(insurance.notes, keyword)}</div>` : ''}
-            ${insurance.password ? `<button class="btn-link" style="margin-top: 8px; font-size: 12px;" onclick="togglePassword('${insurance.id}')">비밀번호 보기</button>` : ''}
         </div>
-    `).join('');
+    `;
 }
 
-// 은행정보 렌더링
+// 은행정보 렌더링 (아코디언 형태)
 function renderBanks(bankList, keyword = '') {
     const container = document.getElementById('banksList');
     
@@ -946,33 +982,62 @@ function renderBanks(bankList, keyword = '') {
         container.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 40px;">등록된 은행정보가 없습니다.</p>';
         return;
     }
-    
-    container.innerHTML = bankList.map(bank => `
-        <div class="insurance-card">
-            <div class="card-header">
-                <div>
-                    <div class="card-title">${highlightMatches(bank.serviceName || '', keyword)}</div>
-                    <div class="card-subtitle">${highlightMatches(bank.username || '', keyword)}</div>
+
+    const groupId = 'banks-group';
+
+    container.innerHTML = `
+        <div class="accordion-group" data-group-key="은행정보" draggable="false">
+            <div class="accordion-header" onclick="toggleAccordion('${groupId}')">
+                <div class="accordion-header-content">
+                    <span class="group-name-input" style="border: none; padding-left: 0; cursor: default;" readonly>은행정보 (${bankList.length})</span>
                 </div>
-                <div class="card-actions">
-                    <button class="btn-icon" onclick="editItem('bank', '${bank.id}')" title="수정">✏️</button>
-                    <button class="btn-icon" onclick="deleteItem('${bank.id}')" title="삭제">🗑️</button>
+                <div class="accordion-actions">
+                    <span class="accordion-icon" id="icon-${groupId}">▼</span>
                 </div>
             </div>
-            <div class="card-info">
-                ${bank.password ? `
-                <div class="info-item">
-                    <span class="info-label">비밀번호:</span>
-                    <span class="info-value">${highlightMatches(bank.password || '', keyword)}</span>
-                </div>
-                ` : ''}
+            <div class="accordion-content" id="${groupId}" style="display: block">
+                ${bankList.map(bank => `
+                    <div class="account-item" draggable="false" data-account-id="${bank.id}">
+                        <div class="account-item-content">
+                            <div class="account-item-info">
+                                <div class="account-item-title">
+                                    ${highlightMatches(bank.serviceName || '', keyword)}
+                                </div>
+                                <div class="account-item-credentials">
+                                    <div class="credential-row">
+                                        <span class="credential-label">계좌번호:</span>
+                                        <span class="credential-value">
+                                            ${highlightMatches(bank.username || '', keyword)}
+                                        </span>
+                                    </div>
+                                    ${bank.password ? `
+                                    <div class="credential-row">
+                                        <span class="credential-label">비밀번호:</span>
+                                        <span class="credential-value">
+                                            ${highlightMatches(bank.password || '', keyword)}
+                                        </span>
+                                    </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                            <div class="account-item-actions">
+                                <button class="btn-icon-small" onclick="editItem('bank', '${bank.id}')" title="수정">✏️</button>
+                                <button class="btn-icon-small" onclick="deleteItem('${bank.id}')" title="삭제">🗑️</button>
+                            </div>
+                        </div>
+                        ${bank.notes ? `
+                        <div class="account-item-details" style="display: block;">
+                            <div class="card-notes"><strong>메모:</strong> ${highlightMatches(bank.notes, keyword)}</div>
+                        </div>
+                        ` : ''}
+                    </div>
+                `).join('')}
             </div>
-            ${bank.notes ? `<div class="card-notes">${highlightMatches(bank.notes, keyword)}</div>` : ''}
         </div>
-    `).join('');
+    `;
 }
 
-// 기타정보 렌더링
+// 기타정보 렌더링 (아코디언 형태)
 function renderExtras(extrasList, keyword = '') {
     const container = document.getElementById('extrasList');
     
@@ -980,21 +1045,48 @@ function renderExtras(extrasList, keyword = '') {
         container.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 40px;">등록된 기타 정보가 없습니다.</p>';
         return;
     }
-    
-    container.innerHTML = extrasList.map(extra => `
-        <div class="insurance-card">
-            <div class="card-header">
-                <div>
-                    <div class="card-title">${highlightMatches(extra.serviceName || '', keyword)}</div>
+
+    const groupId = 'extras-group';
+
+    container.innerHTML = `
+        <div class="accordion-group" data-group-key="기타정보" draggable="false">
+            <div class="accordion-header" onclick="toggleAccordion('${groupId}')">
+                <div class="accordion-header-content">
+                    <span class="group-name-input" style="border: none; padding-left: 0; cursor: default;" readonly>기타정보 (${extrasList.length})</span>
                 </div>
-                <div class="card-actions">
-                    <button class="btn-icon" onclick="editItem('extra', '${extra.id}')" title="수정">✏️</button>
-                    <button class="btn-icon" onclick="deleteItem('${extra.id}')" title="삭제">🗑️</button>
+                <div class="accordion-actions">
+                    <span class="accordion-icon" id="icon-${groupId}">▼</span>
                 </div>
             </div>
-            ${extra.notes ? `<div class="card-notes">${highlightMatches(extra.notes, keyword)}</div>` : ''}
+            <div class="accordion-content" id="${groupId}" style="display: block">
+                ${extrasList.map(extra => `
+                    <div class="account-item" draggable="false" data-account-id="${extra.id}">
+                        <div class="account-item-content">
+                            <div class="account-item-info">
+                                <div class="account-item-title">
+                                    ${highlightMatches(extra.serviceName || '', keyword)}
+                                </div>
+                                ${extra.notes ? `
+                                <div class="account-item-credentials">
+                                    <div class="credential-row">
+                                        <span class="credential-label">내용:</span>
+                                        <span class="credential-value">
+                                            ${highlightMatches(extra.notes || '', keyword)}
+                                        </span>
+                                    </div>
+                                </div>
+                                ` : ''}
+                            </div>
+                            <div class="account-item-actions">
+                                <button class="btn-icon-small" onclick="editItem('extra', '${extra.id}')" title="수정">✏️</button>
+                                <button class="btn-icon-small" onclick="deleteItem('${extra.id}')" title="삭제">🗑️</button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
         </div>
-    `).join('');
+    `;
 }
 
 // 수정 모드로 데이터 로드
@@ -1397,6 +1489,19 @@ document.getElementById('modal').addEventListener('click', (e) => {
         closeModal();
     }
 });
+
+// 엑셀 작업 비밀번호 확인
+async function verifyExcelPassword() {
+    const input = prompt('엑셀 작업 비밀번호를 입력하세요.\n\n(힌트: 사전에 정한 7자리 숫자)');
+    if (input === null) {
+        return false; // 취소
+    }
+    if (input !== '1397842') {
+        alert('비밀번호가 올바르지 않습니다.');
+        return false;
+    }
+    return true;
+}
 
 // 엑셀 다운로드
 // 시트 구조:
@@ -1846,19 +1951,30 @@ async function uploadExcel(file) {
     }
 }
 
-// 엑셀 다운로드 버튼 이벤트
-document.getElementById('downloadExcelBtn').addEventListener('click', downloadExcel);
+// 엑셀 다운로드 버튼 이벤트 (비밀번호 확인 포함)
+document.getElementById('downloadExcelBtn').addEventListener('click', async () => {
+    const ok = await verifyExcelPassword();
+    if (!ok) return;
+    downloadExcel();
+});
 
-// 엑셀 업로드 버튼 이벤트
-document.getElementById('uploadExcelInput').addEventListener('change', (e) => {
+// 엑셀 업로드 버튼 이벤트 (비밀번호 확인 포함)
+document.getElementById('uploadExcelInput').addEventListener('change', async (e) => {
     const file = e.target.files[0];
-    if (file) {
-        if (confirm(`"${file.name}" 파일을 업로드하시겠습니까?`)) {
-            uploadExcel(file);
-        }
-        // 파일 입력 초기화
+    if (!file) return;
+
+    const ok = await verifyExcelPassword();
+    if (!ok) {
+        // 비밀번호 실패 시 선택 취소
         e.target.value = '';
+        return;
     }
+
+    if (confirm(`"${file.name}" 파일을 업로드하시겠습니까?`)) {
+        uploadExcel(file);
+    }
+    // 파일 입력 초기화
+    e.target.value = '';
 });
 
 // ESC 키로 모달 닫기
