@@ -1160,6 +1160,8 @@ document.getElementById('modal').addEventListener('click', (e) => {
 });
 
 // 엑셀 다운로드
+// TODO(보험정보): 현재는 계정(Accounts)만 엑셀로 내보내며,
+// 보험정보는 반영하지 않습니다. 나중에 보험 엑셀 내보내기 기능을 다시 개발할 것.
 async function downloadExcel() {
     const user = auth.currentUser;
     if (!user) {
@@ -1175,15 +1177,13 @@ async function downloadExcel() {
             .once('value');
         
         const accounts = [];
-        const insurance = [];
         
         if (snapshot.exists()) {
             snapshot.forEach((childSnapshot) => {
                 const data = { id: childSnapshot.key, ...childSnapshot.val() };
+                // 현재는 계정만 엑셀에 포함 (보험정보는 제외)
                 if (data.type === 'account') {
                     accounts.push(data);
-                } else {
-                    insurance.push(data);
                 }
             });
         }
@@ -1206,26 +1206,9 @@ async function downloadExcel() {
             const accountWs = XLSX.utils.json_to_sheet(accountData);
             XLSX.utils.book_append_sheet(wb, accountWs, '계정');
         }
-        
-        // 보험정보 시트 생성
-        const insuranceData = insurance.map(item => ({
-            '서비스/사이트명': item.serviceName || '',
-            '보험사명': item.insuranceCompany || '',
-            '보험번호': item.insuranceNumber || '',
-            '아이디/이메일': item.username || '',
-            '비밀번호': item.password || '',
-            '메모': item.notes || '',
-            '등록일': item.createdAt ? new Date(item.createdAt).toLocaleString('ko-KR') : '',
-            '수정일': item.updatedAt ? new Date(item.updatedAt).toLocaleString('ko-KR') : ''
-        }));
-        
-        if (insuranceData.length > 0) {
-            const insuranceWs = XLSX.utils.json_to_sheet(insuranceData);
-            XLSX.utils.book_append_sheet(wb, insuranceWs, '보험정보');
-        }
-        
-        // 빈 경우 빈 시트라도 생성
-        if (accountData.length === 0 && insuranceData.length === 0) {
+
+        // 빈 경우 안내 문구 시트라도 생성
+        if (accountData.length === 0) {
             const emptyWs = XLSX.utils.json_to_sheet([{ '메시지': '등록된 데이터가 없습니다.' }]);
             XLSX.utils.book_append_sheet(wb, emptyWs, '계정');
         }
@@ -1233,8 +1216,9 @@ async function downloadExcel() {
         // 파일 다운로드
         const fileName = `계정관리_${new Date().toISOString().split('T')[0]}.xlsx`;
         XLSX.writeFile(wb, fileName);
-        
-        alert(`엑셀 파일이 다운로드되었습니다.\n\n계정: ${accounts.length}개\n보험정보: ${insurance.length}개`);
+
+        // 현재는 계정 개수만 안내
+        alert(`엑셀 파일이 다운로드되었습니다.\n\n계정: ${accounts.length}개`);
     } catch (error) {
         console.error('엑셀 다운로드 오류:', error);
         alert('엑셀 다운로드 중 오류가 발생했습니다.');
@@ -1242,6 +1226,8 @@ async function downloadExcel() {
 }
 
 // 엑셀 업로드
+// TODO(보험정보): 현재는 계정(Accounts)만 업로드 대상이며,
+// 보험정보 시트/컬럼은 무시합니다. 나중에 보험 엑셀 업로드 기능을 다시 개발할 것.
 async function uploadExcel(file) {
     const user = auth.currentUser;
     if (!user) {
@@ -1265,61 +1251,52 @@ async function uploadExcel(file) {
                 let totalAdded = 0;
                 let totalSkipped = 0;
                 const errors = [];
-                
-                // 각 시트 처리
+
+                // 각 시트 처리 (현재는 모든 시트를 "계정" 데이터로만 취급)
                 workbook.SheetNames.forEach(sheetName => {
                     const worksheet = workbook.Sheets[sheetName];
                     const jsonData = XLSX.utils.sheet_to_json(worksheet);
-                    
+
                     jsonData.forEach((row, index) => {
                         try {
-                            // 필수 필드 확인 (계정인 경우)
-                            const isInsurance = sheetName.includes('보험');
-                            let serviceName = '';
-                            let username = '';
-                            let password = '';
-                            
-                            if (isInsurance) {
-                                // 보험정보인 경우
-                                serviceName = row['서비스/사이트명'] || row['서비스'] || row['사이트명'] || '';
-                                username = row['아이디/이메일'] || row['아이디'] || row['이메일'] || '';
-                                password = row['비밀번호'] || '';
-                            } else {
-                                // 계정인 경우 - 새로운 컬럼 형식
-                                serviceName = row['서비스 명'] || row['사이트명'] || row['서비스/사이트명'] || row['서비스'] || '';
-                                username = row['아이디 (이메일)'] || row['아이디/이메일'] || row['아이디'] || row['이메일'] || '';
-                                password = row['비밀번호'] || '';
-                            }
-                            
+                            // 계정용 컬럼만 사용 (보험 관련 컬럼은 무시)
+                            const serviceName =
+                                row['서비스 명'] ||
+                                row['사이트명'] ||
+                                row['서비스/사이트명'] ||
+                                row['서비스'] ||
+                                '';
+                            const username =
+                                row['아이디 (이메일)'] ||
+                                row['아이디/이메일'] ||
+                                row['아이디'] ||
+                                row['이메일'] ||
+                                '';
+                            const password = row['비밀번호'] || '';
+
                             if (!serviceName || !username || !password) {
                                 totalSkipped++;
                                 errors.push(`${sheetName} 시트 ${index + 2}행: 필수 필드 누락 (서비스 명, 아이디, 비밀번호 필요)`);
                                 return;
                             }
-                            
-                            // 데이터 준비
+
+                            // 데이터 준비 (항상 type: 'account')
                             const itemData = {
                                 serviceName: String(serviceName).trim(),
                                 username: String(username).trim(),
                                 password: String(password).trim(),
                                 notes: String(row['특이사항'] || row['메모'] || '').trim(),
-                                type: isInsurance ? 'insurance' : 'account',
+                                type: 'account',
                                 userId: user.uid,
                                 createdAt: Date.now(),
                                 updatedAt: Date.now()
                             };
-                            
-                            // 사이트 주소 추가 (계정인 경우)
-                            if (!isInsurance && row['사이트 주소']) {
+
+                            // 사이트 주소 추가 (계정 컬럼)
+                            if (row['사이트 주소']) {
                                 itemData.siteUrl = String(row['사이트 주소']).trim();
                             }
-                            
-                            // 보험정보인 경우 추가 필드
-                            if (itemData.type === 'insurance') {
-                                itemData.insuranceCompany = String(row['보험사명'] || '').trim();
-                                itemData.insuranceNumber = String(row['보험번호'] || '').trim();
-                            }
-                            
+
                             // Realtime Database에 추가 (Promise 배열에 추가)
                             const promise = db.ref('items').push(itemData)
                                 .then(() => {
@@ -1329,7 +1306,7 @@ async function uploadExcel(file) {
                                     totalSkipped++;
                                     errors.push(`${sheetName} 시트 ${index + 2}행: ${error.message}`);
                                 });
-                            
+
                             promises.push(promise);
                         } catch (error) {
                             totalSkipped++;
