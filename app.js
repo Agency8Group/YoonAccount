@@ -798,8 +798,36 @@ window.toggleAccordion = function(groupId) {
     if (content.style.display === 'none') {
         content.style.display = 'block';
         icon.textContent = '▼';
+        
+        // 내용 높이 계산하여 1개 항목 여유 공간 추가
+        // transition을 일시적으로 비활성화하여 정확한 높이 측정
+        const originalTransition = content.style.transition;
+        content.style.transition = 'none';
+        
+        setTimeout(() => {
+            const accountItems = content.querySelectorAll('.account-item');
+            if (accountItems.length > 0) {
+                // 실제 높이 측정
+                const totalHeight = content.scrollHeight;
+                const firstItemHeight = accountItems[0].offsetHeight || 120; // 기본값 120px
+                
+                // 1개 항목 여유 공간 추가 (최소 150px 여유)
+                const maxHeight = totalHeight + Math.max(firstItemHeight, 150);
+                
+                // 인라인 스타일로 강제 설정
+                content.style.setProperty('max-height', `${maxHeight}px`, 'important');
+                content.style.setProperty('overflow-y', 'auto', 'important');
+            } else {
+                content.style.setProperty('max-height', '70vh', 'important');
+            }
+            
+            // transition 복원
+            content.style.transition = originalTransition;
+        }, 50);
     } else {
         content.style.display = 'none';
+        content.style.maxHeight = '';
+        content.style.overflowY = '';
         icon.textContent = '▶';
     }
 };

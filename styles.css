@@ -586,22 +586,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    max-height: calc(100vh - 300px);
-    overflow-y: auto;
     padding-right: 4px;
-}
-
-.accordion-container::-webkit-scrollbar {
-    width: 8px;
-}
-
-.accordion-container::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border-radius: 4px;
-}
-
-.accordion-container::-webkit-scrollbar-thumb:hover {
-    background: var(--text-secondary);
 }
 
 /* 아코디언 그룹 */
@@ -762,18 +747,26 @@ body {
 }
 
 .accordion-content[style*="display: block"] {
-    max-height: 10000px;
     overflow-y: auto;
-    max-height: 80vh;
+    overflow-x: hidden;
+    display: block !important;
 }
 
 .accordion-content[style*="display: block"]::-webkit-scrollbar {
     width: 6px;
 }
 
+.accordion-content[style*="display: block"]::-webkit-scrollbar-track {
+    background: transparent;
+}
+
 .accordion-content[style*="display: block"]::-webkit-scrollbar-thumb {
     background: var(--border);
     border-radius: 3px;
+}
+
+.accordion-content[style*="display: block"]::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
 }
 
 /* 계정 항목 */
@@ -1330,9 +1323,6 @@ body {
         margin-bottom: 6px;
     }
     
-    .accordion-container {
-        max-height: calc(100vh - 250px);
-    }
     
     .accordion-header {
         padding: 12px 14px;
