@@ -817,16 +817,15 @@ function renderAccounts(accounts, keyword = '') {
         return a.name.localeCompare(b.name);
     });
     
-    // 아코디언 HTML 생성
+    // 아코디언 HTML 생성 (최초에는 모두 접힌 상태로 렌더링)
     container.innerHTML = sortedGroups.map((group, groupIndex) => {
         const groupId = `group-${groupIndex}`;
-        const isOpen = false; // 모든 그룹은 기본적으로 닫힌 상태
+        const isOpen = false; // 기본적으로 모두 접힌 상태
         
         return `
             <div class="accordion-group" data-group-key="${escapeHtml(group.originalKey || group.name)}" draggable="false" data-group-index="${groupIndex}">
-                <div class="accordion-header" onclick="toggleAccordion('${groupId}')">
+                <div class="accordion-header" onclick="toggleAccordion('${groupId}', this)">
                     <div class="accordion-header-content">
-                        <span class="drag-handle" title="드래그하여 순서 변경">☰</span>
                         <input type="text" 
                                class="group-name-input" 
                                value="${escapeHtml(group.name)}" 
@@ -839,7 +838,6 @@ function renderAccounts(accounts, keyword = '') {
                         ${group.url ? `<a href="${escapeHtml(group.url)}" target="_blank" rel="noopener noreferrer" class="group-url" onclick="event.stopPropagation()" title="${escapeHtml(group.url)}">${escapeHtml(group.url.length > 30 ? group.url.substring(0, 30) + '...' : group.url)}</a>` : ''}
                     </div>
                     <div class="accordion-actions">
-                        <span class="accordion-icon" id="icon-${groupId}">▼</span>
                     </div>
                 </div>
                 <div class="accordion-content" id="${groupId}" style="display: ${isOpen ? 'block' : 'none'}">
@@ -879,7 +877,7 @@ function renderAccounts(accounts, keyword = '') {
         `;
     }).join('');
     
-    // 드래그 앤 드롭 이벤트 초기화
+    // 드래그 앤 드롭 이벤트 초기화 (1계정 탭 대분류 순서 변경 기능 제거: 그룹 드래그는 막고, 개별 계정 항목만 유지)
     initializeDragAndDrop();
     
     // 복사 버튼 이벤트 초기화
@@ -912,15 +910,13 @@ function renderInsurance(insuranceList, keyword = '') {
 
     container.innerHTML = `
         <div class="accordion-group" data-group-key="보험정보" draggable="false">
-            <div class="accordion-header" onclick="toggleAccordion('${groupId}')">
+            <div class="accordion-header" onclick="toggleAccordion('${groupId}', this)">
                 <div class="accordion-header-content">
                     <span class="group-name-input" style="border: none; padding-left: 0; cursor: default;" readonly>보험정보 (${insuranceList.length})</span>
                 </div>
-                <div class="accordion-actions">
-                    <span class="accordion-icon" id="icon-${groupId}">▼</span>
-                </div>
+                <div class="accordion-actions"></div>
             </div>
-            <div class="accordion-content" id="${groupId}" style="display: block">
+            <div class="accordion-content" id="${groupId}" style="display: none">
                 ${insuranceList.map(insurance => `
                     <div class="account-item" draggable="false" data-account-id="${insurance.id}">
                         <div class="account-item-content">
@@ -987,15 +983,13 @@ function renderBanks(bankList, keyword = '') {
 
     container.innerHTML = `
         <div class="accordion-group" data-group-key="은행정보" draggable="false">
-            <div class="accordion-header" onclick="toggleAccordion('${groupId}')">
+            <div class="accordion-header" onclick="toggleAccordion('${groupId}', this)">
                 <div class="accordion-header-content">
                     <span class="group-name-input" style="border: none; padding-left: 0; cursor: default;" readonly>은행정보 (${bankList.length})</span>
                 </div>
-                <div class="accordion-actions">
-                    <span class="accordion-icon" id="icon-${groupId}">▼</span>
-                </div>
+                <div class="accordion-actions"></div>
             </div>
-            <div class="accordion-content" id="${groupId}" style="display: block">
+            <div class="accordion-content" id="${groupId}" style="display: none">
                 ${bankList.map(bank => `
                     <div class="account-item" draggable="false" data-account-id="${bank.id}">
                         <div class="account-item-content">
@@ -1050,15 +1044,13 @@ function renderExtras(extrasList, keyword = '') {
 
     container.innerHTML = `
         <div class="accordion-group" data-group-key="기타정보" draggable="false">
-            <div class="accordion-header" onclick="toggleAccordion('${groupId}')">
+            <div class="accordion-header" onclick="toggleAccordion('${groupId}', this)">
                 <div class="accordion-header-content">
                     <span class="group-name-input" style="border: none; padding-left: 0; cursor: default;" readonly>기타정보 (${extrasList.length})</span>
                 </div>
-                <div class="accordion-actions">
-                    <span class="accordion-icon" id="icon-${groupId}">▼</span>
-                </div>
+                <div class="accordion-actions"></div>
             </div>
-            <div class="accordion-content" id="${groupId}" style="display: block">
+            <div class="accordion-content" id="${groupId}" style="display: none">
                 ${extrasList.map(extra => `
                     <div class="account-item" draggable="false" data-account-id="${extra.id}">
                         <div class="account-item-content">
@@ -1121,45 +1113,20 @@ async function loadItemForEdit(type, itemId) {
     }
 }
 
-// 아코디언 토글
-window.toggleAccordion = function(groupId) {
+// 아코디언 토글 (헤더 한 번 클릭 → 바로 열기/닫기, 추가 애니메이션 최소화)
+window.toggleAccordion = function(groupId, headerEl) {
     const content = document.getElementById(groupId);
-    const icon = document.getElementById(`icon-${groupId}`);
-    
-    if (content.style.display === 'none') {
+    if (!content) return;
+
+    // 단순히 display만 토글해서 "숨김→보임"의 미세한 중간 상태가 없도록 처리
+    if (content.style.display === 'none' || content.style.display === '') {
         content.style.display = 'block';
-        icon.textContent = '▼';
-        
-        // 내용 높이 계산하여 1개 항목 여유 공간 추가
-        // transition을 일시적으로 비활성화하여 정확한 높이 측정
-        const originalTransition = content.style.transition;
-        content.style.transition = 'none';
-        
-        setTimeout(() => {
-            const accountItems = content.querySelectorAll('.account-item');
-            if (accountItems.length > 0) {
-                // 실제 높이 측정
-                const totalHeight = content.scrollHeight;
-                const firstItemHeight = accountItems[0].offsetHeight || 120; // 기본값 120px
-                
-                // 1개 항목 여유 공간 추가 (최소 150px 여유)
-                const maxHeight = totalHeight + Math.max(firstItemHeight, 150);
-                
-                // 인라인 스타일로 강제 설정
-                content.style.setProperty('max-height', `${maxHeight}px`, 'important');
-                content.style.setProperty('overflow-y', 'auto', 'important');
-            } else {
-                content.style.setProperty('max-height', '70vh', 'important');
-            }
-            
-            // transition 복원
-            content.style.transition = originalTransition;
-        }, 50);
+        content.style.maxHeight = '';
+        content.style.overflowY = '';
     } else {
         content.style.display = 'none';
         content.style.maxHeight = '';
         content.style.overflowY = '';
-        icon.textContent = '▶';
     }
 };
 
@@ -1193,28 +1160,9 @@ window.updateGroupName = async function(groupId, newName, originalKey) {
 
 // 드래그 앤 드롭 초기화
 function initializeDragAndDrop() {
-    const groups = document.querySelectorAll('.accordion-group');
     const accountItems = document.querySelectorAll('.account-item');
     
-    // 그룹 드래그 앤 드롭
-    groups.forEach(group => {
-        const dragHandle = group.querySelector('.drag-handle');
-        if (dragHandle) {
-            dragHandle.addEventListener('mousedown', (e) => {
-                e.stopPropagation();
-                group.draggable = true;
-            });
-            dragHandle.addEventListener('mouseup', () => {
-                group.draggable = false;
-            });
-        }
-        group.addEventListener('dragstart', handleGroupDragStart);
-        group.addEventListener('dragover', handleGroupDragOver);
-        group.addEventListener('drop', handleGroupDrop);
-        group.addEventListener('dragend', handleGroupDragEnd);
-    });
-    
-    // 계정 항목 드래그 앤 드롭
+    // 계정 항목 드래그 앤 드롭만 유지 (대분류 그룹 순서 변경 기능 제거)
     accountItems.forEach(item => {
         const dragHandle = item.querySelector('.drag-handle-small');
         if (dragHandle) {
@@ -1490,17 +1438,58 @@ document.getElementById('modal').addEventListener('click', (e) => {
     }
 });
 
-// 엑셀 작업 비밀번호 확인
-async function verifyExcelPassword() {
-    const input = prompt('엑셀 작업 비밀번호를 입력하세요.\n\n(힌트: 사전에 정한 7자리 숫자)');
-    if (input === null) {
-        return false; // 취소
+// 공통 확인 모달
+let currentConfirmCallback = null;
+
+function openConfirmModal(title, message, onConfirm) {
+    const modal = document.getElementById('confirmModal');
+    const titleEl = document.getElementById('confirmModalTitle');
+    const msgEl = document.getElementById('confirmModalMessage');
+
+    if (!modal || !titleEl || !msgEl) return;
+
+    titleEl.textContent = title || '확인';
+    msgEl.textContent = message || '이 작업을 진행하시겠습니까?';
+    currentConfirmCallback = typeof onConfirm === 'function' ? onConfirm : null;
+
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeConfirmModal() {
+    const modal = document.getElementById('confirmModal');
+    if (modal) {
+        modal.classList.remove('active');
     }
-    if (input !== '1397842') {
-        alert('비밀번호가 올바르지 않습니다.');
-        return false;
-    }
-    return true;
+    document.body.style.overflow = '';
+    currentConfirmCallback = null;
+}
+
+const confirmModalEl = document.getElementById('confirmModal');
+if (confirmModalEl) {
+    confirmModalEl.addEventListener('click', (e) => {
+        if (e.target.id === 'confirmModal') {
+            closeConfirmModal();
+        }
+    });
+}
+
+const confirmCloseBtn = document.getElementById('confirmModalClose');
+const confirmCancelBtn = document.getElementById('confirmModalCancel');
+const confirmOkBtn = document.getElementById('confirmModalOk');
+
+if (confirmCloseBtn) {
+    confirmCloseBtn.addEventListener('click', closeConfirmModal);
+}
+if (confirmCancelBtn) {
+    confirmCancelBtn.addEventListener('click', closeConfirmModal);
+}
+if (confirmOkBtn) {
+    confirmOkBtn.addEventListener('click', () => {
+        const cb = currentConfirmCallback;
+        closeConfirmModal();
+        if (cb) cb();
+    });
 }
 
 // 엑셀 다운로드
@@ -1951,31 +1940,45 @@ async function uploadExcel(file) {
     }
 }
 
-// 엑셀 다운로드 버튼 이벤트 (비밀번호 확인 포함)
-document.getElementById('downloadExcelBtn').addEventListener('click', async () => {
-    const ok = await verifyExcelPassword();
-    if (!ok) return;
-    downloadExcel();
+// 엑셀 다운로드 버튼 이벤트 (확인 모달)
+document.getElementById('downloadExcelBtn').addEventListener('click', () => {
+    openConfirmModal(
+        '엑셀 다운로드',
+        '현재 계정 / 은행 / 보험 / 기타 정보를 엑셀 파일로 저장할까요?',
+        () => {
+            downloadExcel();
+        }
+    );
 });
 
-// 엑셀 업로드 버튼 이벤트 (비밀번호 확인 포함)
-document.getElementById('uploadExcelInput').addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+// 엑셀 업로드 버튼 이벤트
+const openUploadExcelBtn = document.getElementById('openUploadExcelBtn');
+const uploadExcelInput = document.getElementById('uploadExcelInput');
 
-    const ok = await verifyExcelPassword();
-    if (!ok) {
-        // 비밀번호 실패 시 선택 취소
-        e.target.value = '';
-        return;
-    }
+if (openUploadExcelBtn && uploadExcelInput) {
+    // 1단계: 버튼 클릭 시 확인 모달 먼저
+    openUploadExcelBtn.addEventListener('click', () => {
+        openConfirmModal(
+            '엑셀 업로드',
+            '엑셀 파일을 업로드해서 기존 데이터에 추가할까요?',
+            () => {
+                // 확인 시에만 파일 선택창 열기
+                uploadExcelInput.click();
+            }
+        );
+    });
 
-    if (confirm(`"${file.name}" 파일을 업로드하시겠습니까?`)) {
+    // 2단계: 파일 선택 후 바로 업로드 실행
+    uploadExcelInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
         uploadExcel(file);
-    }
-    // 파일 입력 초기화
-    e.target.value = '';
-});
+
+        // 다음에 다시 선택할 수 있도록 초기화
+        e.target.value = '';
+    });
+}
 
 // ESC 키로 모달 닫기
 document.addEventListener('keydown', (e) => {
