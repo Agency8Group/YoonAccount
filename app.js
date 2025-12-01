@@ -324,6 +324,8 @@ document.querySelectorAll('.tab').forEach(tab => {
         
         if (tabName === 'accounts') {
             document.getElementById('accountsTab').classList.add('active');
+        } else if (tabName === 'banks') {
+            document.getElementById('banksTab').classList.add('active');
         } else if (tabName === 'insurance') {
             document.getElementById('insuranceTab').classList.add('active');
         } else if (tabName === 'extras') {
@@ -340,6 +342,8 @@ document.getElementById('addAccountBtn').addEventListener('click', () => {
     const activeTab = document.querySelector('.tab.active').dataset.tab;
     if (activeTab === 'accounts') {
         openModal('account');
+    } else if (activeTab === 'banks') {
+        openModal('bank');
     } else if (activeTab === 'insurance') {
         openModal('insurance');
     } else if (activeTab === 'extras') {
@@ -360,6 +364,7 @@ function openModal(type, itemId = null) {
     const accountSiteUrlField = document.getElementById('accountSiteUrlField');
     const serviceNameLabel = document.getElementById('serviceNameLabel');
     const notesLabel = document.getElementById('notesLabel');
+    const usernameLabel = document.getElementById('usernameLabel');
     
     if (type === 'insurance') {
         document.getElementById('modalTitle').textContent = itemId ? '보험정보 수정' : '새 보험정보 추가';
@@ -368,6 +373,15 @@ function openModal(type, itemId = null) {
         accountSiteUrlField.style.display = 'none';
         serviceNameLabel.textContent = '보험서비스';
         notesLabel.textContent = '메모';
+        if (usernameLabel) usernameLabel.textContent = '아이디(이메일)';
+    } else if (type === 'bank') {
+        document.getElementById('modalTitle').textContent = itemId ? '은행정보 수정' : '새 은행정보 추가';
+        insuranceFields.style.display = 'none';
+        insuranceFields2.style.display = 'none';
+        accountSiteUrlField.style.display = 'none';
+        serviceNameLabel.textContent = '은행명';
+        notesLabel.textContent = '메모';
+        if (usernameLabel) usernameLabel.textContent = '계좌번호';
     } else if (type === 'extra') {
         document.getElementById('modalTitle').textContent = itemId ? '기타정보 수정' : '새 기타정보 추가';
         insuranceFields.style.display = 'none';
@@ -375,6 +389,7 @@ function openModal(type, itemId = null) {
         accountSiteUrlField.style.display = 'none';
         serviceNameLabel.textContent = '항목명';
         notesLabel.textContent = '내용';
+        if (usernameLabel) usernameLabel.textContent = '아이디 (이메일)';
     } else {
         document.getElementById('modalTitle').textContent = itemId ? '계정 수정' : '새 계정 추가';
         insuranceFields.style.display = 'none';
@@ -382,6 +397,7 @@ function openModal(type, itemId = null) {
         accountSiteUrlField.style.display = 'block';
         serviceNameLabel.textContent = '서비스 명';
         notesLabel.textContent = '메모';
+        if (usernameLabel) usernameLabel.textContent = '아이디 (이메일)';
     }
     
     if (itemId) {
@@ -502,6 +518,26 @@ document.getElementById('accountForm').addEventListener('submit', async (e) => {
             insuranceCompany: document.getElementById('insuranceCompany').value.trim(),
             insuranceNumber: document.getElementById('insuranceNumber').value.trim()
         };
+    } else if (currentItemType === 'bank') {
+        // 은행정보: 은행명, 계좌번호, 비밀번호 필수
+        if (!serviceName || !username || !password) {
+            alert('은행명, 계좌번호, 비밀번호는 필수 입력 항목입니다.');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalBtnText;
+            }
+            return;
+        }
+
+        itemData = {
+            serviceName,            // 은행명
+            username,               // 계좌번호
+            password,               // 비밀번호
+            notes,                  // 메모
+            type: currentItemType,
+            userId: user.uid,
+            updatedAt: Date.now()
+        };
     } else if (currentItemType === 'extra') {
         // 기타정보: 항목명 또는 내용 둘 중 하나만 있어도 저장
         if (!serviceName && !notes) {
@@ -621,6 +657,7 @@ async function loadData() {
         console.log('데이터 스냅샷:', snapshot.exists() ? '존재함' : '없음');
         
         window.__allAccounts = [];
+        window.__allBanks = [];
         window.__allInsurance = [];
         window.__allExtras = [];
         
@@ -630,6 +667,8 @@ async function loadData() {
                 console.log('데이터 항목:', data);
                 if (data.type === 'account') {
                     window.__allAccounts.push(data);
+                } else if (data.type === 'bank') {
+                    window.__allBanks.push(data);
                 } else if (data.type === 'insurance') {
                     window.__allInsurance.push(data);
                 } else if (data.type === 'extra') {
@@ -643,6 +682,7 @@ async function loadData() {
         
         // updatedAt 기준으로 정렬
         window.__allAccounts.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+        window.__allBanks.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
         window.__allInsurance.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
         window.__allExtras.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
 
@@ -687,7 +727,7 @@ function highlightMatches(text, query) {
     return escapeHtml(safeText).replace(regex, (match) => `<span class="highlight">${match}</span>`);
 }
 
-// 검색 필터 적용 (계정 + 보험 + 기타)
+// 검색 필터 적용 (계정 + 은행 + 보험 + 기타)
 function applySearchFilter() {
     const queryInput = document.getElementById('globalSearchInput');
     const keyword = (queryInput ? queryInput.value : '').trim().toLowerCase();
@@ -715,6 +755,16 @@ function applySearchFilter() {
         return target.toLowerCase().includes(keyword);
     });
 
+    const banks = (window.__allBanks || []).filter(item => {
+        if (!keyword) return true;
+        const target =
+            (item.serviceName || '') +   // 은행명
+            (item.username || '') +      // 계좌번호
+            (item.password || '') +
+            (item.notes || '');
+        return target.toLowerCase().includes(keyword);
+    });
+
     const extras = (window.__allExtras || []).filter(item => {
         if (!keyword) return true;
         const target =
@@ -724,6 +774,7 @@ function applySearchFilter() {
     });
     
     renderAccounts(accounts, keyword);
+    renderBanks(banks, keyword);
     renderInsurance(insurance, keyword);
     renderExtras(extras, keyword);
 }
@@ -883,6 +934,40 @@ function renderInsurance(insuranceList, keyword = '') {
             </div>
             ${insurance.notes ? `<div class="card-notes">${highlightMatches(insurance.notes, keyword)}</div>` : ''}
             ${insurance.password ? `<button class="btn-link" style="margin-top: 8px; font-size: 12px;" onclick="togglePassword('${insurance.id}')">비밀번호 보기</button>` : ''}
+        </div>
+    `).join('');
+}
+
+// 은행정보 렌더링
+function renderBanks(bankList, keyword = '') {
+    const container = document.getElementById('banksList');
+    
+    if (bankList.length === 0) {
+        container.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 40px;">등록된 은행정보가 없습니다.</p>';
+        return;
+    }
+    
+    container.innerHTML = bankList.map(bank => `
+        <div class="insurance-card">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">${highlightMatches(bank.serviceName || '', keyword)}</div>
+                    <div class="card-subtitle">${highlightMatches(bank.username || '', keyword)}</div>
+                </div>
+                <div class="card-actions">
+                    <button class="btn-icon" onclick="editItem('bank', '${bank.id}')" title="수정">✏️</button>
+                    <button class="btn-icon" onclick="deleteItem('${bank.id}')" title="삭제">🗑️</button>
+                </div>
+            </div>
+            <div class="card-info">
+                ${bank.password ? `
+                <div class="info-item">
+                    <span class="info-label">비밀번호:</span>
+                    <span class="info-value">${highlightMatches(bank.password || '', keyword)}</span>
+                </div>
+                ` : ''}
+            </div>
+            ${bank.notes ? `<div class="card-notes">${highlightMatches(bank.notes, keyword)}</div>` : ''}
         </div>
     `).join('');
 }
@@ -1332,6 +1417,7 @@ async function downloadExcel() {
             .once('value');
 
         const accounts = [];
+        const banks = [];
         const insurance = [];
         const extras = [];
 
@@ -1340,6 +1426,8 @@ async function downloadExcel() {
                 const data = { id: childSnapshot.key, ...childSnapshot.val() };
                 if (data.type === 'account') {
                     accounts.push(data);
+                } else if (data.type === 'bank') {
+                    banks.push(data);
                 } else if (data.type === 'insurance') {
                     insurance.push(data);
                 } else if (data.type === 'extra') {
@@ -1375,7 +1463,30 @@ async function downloadExcel() {
         );
         XLSX.utils.book_append_sheet(wb, accountWs, '계정');
 
-        // 보험 시트 생성 (2번째 시트, 기초 컬럼 고정)
+        // 은행 시트 생성 (2번째 시트, 기초 컬럼 고정)
+        const bankBaseRow = {
+            '은행명': '',
+            '계좌번호': '',
+            '비밀번호': '',
+            '메모': '',
+            '등록일': '',
+            '수정일': ''
+        };
+        const bankData = banks.map(item => ({
+            '은행명': item.serviceName || '',
+            '계좌번호': item.username || '',
+            '비밀번호': item.password || '',
+            '메모': item.notes || '',
+            '등록일': item.createdAt ? new Date(item.createdAt).toLocaleString('ko-KR') : '',
+            '수정일': item.updatedAt ? new Date(item.updatedAt).toLocaleString('ko-KR') : ''
+        }));
+
+        const bankWs = XLSX.utils.json_to_sheet(
+            bankData.length > 0 ? bankData : [bankBaseRow]
+        );
+        XLSX.utils.book_append_sheet(wb, bankWs, '은행정보');
+
+        // 보험 시트 생성 (3번째 시트, 기초 컬럼 고정)
         const insuranceBaseRow = {
             '보험사명': '',
             '보험서비스': '',
@@ -1467,9 +1578,20 @@ async function uploadExcel(file) {
 
                 const sheetNames = workbook.SheetNames;
 
+                // 시트 이름 기준으로 탐색 (없으면 기존 순서대로 폴백)
+                const accountSheetName =
+                    sheetNames.find(name => name === '계정') || sheetNames[0];
+                const bankSheetName =
+                    sheetNames.find(name => name === '은행정보');
+                const insuranceSheetName =
+                    sheetNames.find(name => name === '보험정보') ||
+                    (sheetNames.length > 1 ? sheetNames[1] : null);
+                const extraSheetName =
+                    sheetNames.find(name => name === '기타정보') ||
+                    (sheetNames.length > 2 ? sheetNames[2] : null);
+
                 // 1시트: 계정
-                if (sheetNames.length >= 1) {
-                    const accountSheetName = sheetNames[0];
+                if (accountSheetName) {
                     const accountSheet = workbook.Sheets[accountSheetName];
                     const accountRows = XLSX.utils.sheet_to_json(accountSheet);
 
@@ -1528,9 +1650,59 @@ async function uploadExcel(file) {
                     });
                 }
 
-                // 2시트: 보험정보
-                if (sheetNames.length >= 2) {
-                    const insuranceSheetName = sheetNames[1];
+                // 2시트: 은행정보
+                if (bankSheetName) {
+                    const bankSheet = workbook.Sheets[bankSheetName];
+                    const bankRows = XLSX.utils.sheet_to_json(bankSheet);
+
+                    bankRows.forEach((row, index) => {
+                        try {
+                            const bankName =
+                                row['은행명'] ||
+                                row['이름'] ||
+                                '';
+                            const accountNumber =
+                                row['계좌번호'] ||
+                                row['계좌'] ||
+                                '';
+                            const password = row['비밀번호'] || '';
+
+                            if (!bankName || !accountNumber || !password) {
+                                totalSkipped++;
+                                errors.push(`은행정보 시트 ${index + 2}행: 필수 필드 누락 (은행명, 계좌번호, 비밀번호 필요)`);
+                                return;
+                            }
+
+                            const itemData = {
+                                serviceName: String(bankName).trim(),   // 은행명
+                                username: String(accountNumber).trim(), // 계좌번호
+                                password: String(password).trim(),
+                                notes: String(row['메모'] || '').trim(),
+                                type: 'bank',
+                                userId: user.uid,
+                                createdAt: Date.now(),
+                                updatedAt: Date.now()
+                            };
+
+                            const promise = db.ref('items').push(itemData)
+                                .then(() => {
+                                    totalAdded++;
+                                })
+                                .catch(error => {
+                                    totalSkipped++;
+                                    errors.push(`은행정보 시트 ${index + 2}행: ${error.message}`);
+                                });
+
+                            promises.push(promise);
+                        } catch (error) {
+                            totalSkipped++;
+                            errors.push(`은행정보 시트 ${index + 2}행: ${error.message}`);
+                        }
+                    });
+                }
+
+                // 3시트: 보험정보
+                if (insuranceSheetName) {
                     const insuranceSheet = workbook.Sheets[insuranceSheetName];
                     const insuranceRows = XLSX.utils.sheet_to_json(insuranceSheet);
                     
@@ -1591,9 +1763,8 @@ async function uploadExcel(file) {
                     });
                 }
 
-                // 3시트: 기타정보 (통관번호 / 와이파이 등 단순 정보)
-                if (sheetNames.length >= 3) {
-                    const extraSheetName = sheetNames[2];
+                // 4시트: 기타정보 (통관번호 / 와이파이 등 단순 정보)
+                if (extraSheetName) {
                     const extraSheet = workbook.Sheets[extraSheetName];
                     const extraRows = XLSX.utils.sheet_to_json(extraSheet);
 

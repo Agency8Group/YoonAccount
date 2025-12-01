@@ -79,13 +79,14 @@
                         </div>
                         <button id="addAccountBtn" class="btn-primary">
                             <span class="icon">+</span>
-                            새 계정 추가
+                            신규정보 추가
                         </button>
                     </div>
                 </div>
 
                 <div class="tabs">
                     <button class="tab active" data-tab="accounts">계정</button>
+                    <button class="tab" data-tab="banks">은행정보</button>
                     <button class="tab" data-tab="insurance">보험정보</button>
                     <button class="tab" data-tab="extras">기타정보</button>
                 </div>
@@ -101,6 +102,13 @@
                 <div id="insuranceTab" class="tab-content">
                     <div class="cards-grid" id="insuranceList">
                         <!-- 보험정보 카드들이 여기에 동적으로 추가됩니다 -->
+                    </div>
+                </div>
+
+                <!-- 은행정보 탭 -->
+                <div id="banksTab" class="tab-content">
+                    <div class="cards-grid" id="banksList">
+                        <!-- 은행정보 카드들이 여기에 동적으로 추가됩니다 -->
                     </div>
                 </div>
 
@@ -136,7 +144,7 @@
                 </div>
                 
                 <div class="form-group">
-                    <label>아이디 (이메일)</label>
+                    <label id="usernameLabel">아이디 (이메일)</label>
                     <input type="text" id="username" required>
                 </div>
                 
