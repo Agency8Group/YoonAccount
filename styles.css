@@ -7,28 +7,38 @@
 
 :root {
     --bg-primary: #000000;
-    --bg-secondary: #1a1a1a;
-    --bg-tertiary: #2a2a2a;
+    --bg-secondary: #1c1c1e;
+    --bg-tertiary: #2c2c2e;
+    --bg-quaternary: #3a3a3c;
     --text-primary: #ffffff;
-    --text-secondary: #a0a0a0;
-    --accent: #007aff;
-    --accent-hover: #0051d5;
-    --accent-pressed: #0040a3;
-    --border: #333333;
-    --success: #34c759;
-    --error: #ff3b30;
-    --card-bg: #1a1a1a;
-    --card-hover: #252525;
-    --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.25);
-    --shadow-md: 0 12px 30px rgba(0, 0, 0, 0.35);
-    --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.5);
-    --radius-sm: 8px;
-    --radius-md: 12px;
-    --radius-lg: 16px;
-    --radius-xl: 20px;
-    --transition-fast: 0.18s cubic-bezier(0.22, 0.61, 0.36, 1);
-    --transition-base: 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);
-    --transition-slow: 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
+    --text-secondary: #98989d;
+    --text-tertiary: #636366;
+    --accent: #0a84ff;
+    --accent-hover: #409cff;
+    --accent-pressed: #0051d5;
+    --accent-light: rgba(10, 132, 255, 0.1);
+    --border: rgba(255, 255, 255, 0.1);
+    --border-light: rgba(255, 255, 255, 0.05);
+    --success: #30d158;
+    --error: #ff453a;
+    --warning: #ff9f0a;
+    --card-bg: rgba(28, 28, 30, 0.6);
+    --card-hover: rgba(44, 44, 46, 0.8);
+    --glass-bg: rgba(28, 28, 30, 0.7);
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.2), 0 4px 8px rgba(0, 0, 0, 0.15);
+    --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.3), 0 8px 16px rgba(0, 0, 0, 0.2);
+    --shadow-xl: 0 24px 64px rgba(0, 0, 0, 0.4), 0 12px 24px rgba(0, 0, 0, 0.25);
+    --shadow-glow: 0 0 20px rgba(10, 132, 255, 0.3);
+    --radius-sm: 10px;
+    --radius-md: 14px;
+    --radius-lg: 18px;
+    --radius-xl: 24px;
+    --radius-2xl: 32px;
+    --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-base: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
 html {
@@ -38,9 +48,10 @@ html {
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
-    background: var(--bg-primary);
+    background: linear-gradient(135deg, #000000 0%, #0a0a0a 50%, #000000 100%);
+    background-attachment: fixed;
     color: var(--text-primary);
-    line-height: 1.5;
+    line-height: 1.6;
     min-height: 100vh;
     min-height: 100dvh;
     -webkit-font-smoothing: antialiased;
@@ -78,23 +89,38 @@ body {
     align-items: center;
     justify-content: center;
     min-height: 100vh;
-    min-height: 100dvh; /* 동적 뷰포트 높이 */
+    min-height: 100dvh;
     padding: 20px;
-    background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+    background: radial-gradient(ellipse at top, rgba(10, 132, 255, 0.05) 0%, transparent 50%),
+                linear-gradient(135deg, #000000 0%, #0a0a0a 50%, #000000 100%);
+    background-attachment: fixed;
     position: relative;
     overflow-y: auto;
 }
 
 .login-box {
-    background: var(--bg-secondary);
+    background: var(--glass-bg);
+    backdrop-filter: saturate(180%) blur(40px);
+    -webkit-backdrop-filter: saturate(180%) blur(40px);
     border: 1px solid var(--border);
-    border-radius: var(--radius-xl);
-    padding: 40px 32px;
+    border-radius: var(--radius-2xl);
+    padding: 48px 40px;
     width: 100%;
-    max-width: 420px;
-    box-shadow: var(--shadow-lg);
-    animation: fadeInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    max-width: 440px;
+    box-shadow: var(--shadow-xl), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+    animation: fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
+    overflow: hidden;
+}
+
+.login-box::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
 }
 
 @keyframes fadeInUp {
@@ -109,14 +135,15 @@ body {
 }
 
 .logo {
-    font-size: 36px;
+    font-size: 38px;
     font-weight: 700;
-    margin-bottom: 12px;
-    background: linear-gradient(135deg, #ffffff 0%, #a0a0a0 100%);
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, #ffffff 0%, rgba(255, 255, 255, 0.8) 50%, rgba(255, 255, 255, 0.6) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    letter-spacing: -0.5px;
+    letter-spacing: -0.8px;
+    text-shadow: 0 0 40px rgba(255, 255, 255, 0.1);
 }
 
 .subtitle {
@@ -138,11 +165,13 @@ body {
 .input-group input {
     width: 100%;
     padding: 16px 20px;
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border);
+    background: rgba(44, 44, 46, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--border-light);
     border-radius: var(--radius-md);
     color: var(--text-primary);
-    font-size: 16px; /* 모바일에서 자동 줌 방지 */
+    font-size: 16px;
     transition: all var(--transition-base);
     -webkit-appearance: none;
     appearance: none;
@@ -151,8 +180,9 @@ body {
 .input-group input:focus {
     outline: none;
     border-color: var(--accent);
-    background: var(--bg-secondary);
-    box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.1);
+    background: rgba(44, 44, 46, 0.8);
+    box-shadow: 0 0 0 4px var(--accent-light), var(--shadow-md);
+    transform: translateY(-1px);
 }
 
 .input-group input::placeholder {
@@ -169,27 +199,48 @@ body {
 
 .btn-primary {
     width: 100%;
-    min-height: 50px; /* 터치 친화적 크기 */
+    min-height: 52px;
     padding: 14px 24px;
-    background: var(--accent);
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
     color: white;
     border: none;
     border-radius: var(--radius-md);
     font-size: 17px;
     font-weight: 600;
     cursor: pointer;
-    transition: background var(--transition-fast), color var(--transition-fast), opacity var(--transition-fast);
+    transition: all var(--transition-base);
     position: relative;
     -webkit-tap-highlight-color: transparent;
     user-select: none;
+    box-shadow: var(--shadow-sm), 0 0 0 0 rgba(10, 132, 255, 0.4);
+    overflow: hidden;
+}
+
+.btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.btn-primary:hover:not(:disabled)::before {
+    left: 100%;
 }
 
 .btn-primary:hover:not(:disabled) {
-    background: var(--accent-hover);
+    background: linear-gradient(135deg, var(--accent-hover) 0%, var(--accent) 100%);
+    box-shadow: var(--shadow-md), var(--shadow-glow);
+    transform: translateY(-2px);
 }
 
 .btn-primary:active:not(:disabled) {
     background: var(--accent-pressed);
+    transform: translateY(0);
+    box-shadow: var(--shadow-sm);
 }
 
 .btn-primary:disabled {
@@ -198,26 +249,51 @@ body {
 }
 
 .btn-secondary {
-    min-height: 44px; /* 터치 친화적 크기 */
+    min-height: 44px;
     padding: 10px 20px;
-    background: var(--bg-tertiary);
+    background: rgba(44, 44, 46, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     color: var(--text-primary);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
     font-size: 15px;
     font-weight: 500;
     cursor: pointer;
-    transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), opacity var(--transition-fast);
+    transition: all var(--transition-base);
     -webkit-tap-highlight-color: transparent;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-secondary::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    transform: translate(-50%, -50%);
+    transition: width 0.4s, height 0.4s;
+}
+
+.btn-secondary:hover:not(:disabled)::before {
+    width: 300px;
+    height: 300px;
 }
 
 .btn-secondary:hover:not(:disabled) {
-    background: var(--bg-secondary);
+    background: rgba(44, 44, 46, 0.9);
     border-color: var(--accent);
+    box-shadow: var(--shadow-sm), 0 0 0 1px var(--accent-light);
+    transform: translateY(-1px);
 }
 
 .btn-secondary:active:not(:disabled) {
     background: var(--card-hover);
+    transform: translateY(0);
 }
 
 .btn-secondary:disabled {
@@ -364,15 +440,15 @@ body {
 
 /* 네비게이션 */
 .navbar {
-    background: rgba(26, 26, 26, 0.8);
-    border-bottom: 1px solid var(--border);
+    background: rgba(28, 28, 30, 0.7);
+    border-bottom: 1px solid var(--border-light);
     padding: 0;
     position: sticky;
     top: 0;
     z-index: 100;
-    backdrop-filter: saturate(180%) blur(20px);
-    -webkit-backdrop-filter: saturate(180%) blur(20px);
-    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05);
+    backdrop-filter: saturate(180%) blur(30px);
+    -webkit-backdrop-filter: saturate(180%) blur(30px);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05), var(--shadow-sm);
 }
 
 .nav-content {
@@ -456,9 +532,11 @@ body {
 
 .search-container input {
     width: 100%;
-    padding: 10px 14px;
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border);
+    padding: 12px 16px;
+    background: rgba(44, 44, 46, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--border-light);
     border-radius: var(--radius-md);
     color: var(--text-primary);
     font-size: 14px;
@@ -467,14 +545,15 @@ body {
 
 .search-container input::placeholder {
     color: var(--text-secondary);
-    opacity: 0.7;
+    opacity: 0.6;
 }
 
 .search-container input:focus {
     outline: none;
     border-color: var(--accent);
-    background: var(--bg-secondary);
-    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2);
+    background: rgba(44, 44, 46, 0.8);
+    box-shadow: 0 0 0 3px var(--accent-light), var(--shadow-sm);
+    transform: translateY(-1px);
 }
 
 .highlight {
@@ -541,10 +620,14 @@ body {
 }
 
 .header-section h1 {
-    font-size: 34px;
+    font-size: 36px;
     font-weight: 700;
-    letter-spacing: -0.5px;
+    letter-spacing: -1px;
     line-height: 1.2;
+    background: linear-gradient(135deg, #ffffff 0%, rgba(255, 255, 255, 0.9) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 #addAccountBtn {
@@ -583,12 +666,17 @@ body {
     font-weight: 500;
     cursor: pointer;
     border-bottom: 2px solid transparent;
-    transition: color var(--transition-fast);
+    transition: all var(--transition-base);
     position: relative;
     top: 1px;
     white-space: nowrap;
-    min-height: 48px; /* 터치 친화적 */
+    min-height: 48px;
     -webkit-tap-highlight-color: transparent;
+}
+
+.tab:hover {
+    color: var(--text-primary);
+    background: rgba(44, 44, 46, 0.3);
 }
 
 .tab::after {
@@ -649,15 +737,22 @@ body {
 
 /* 아코디언 그룹 */
 .accordion-group {
-    background: var(--card-bg);
-    border: 1px solid var(--border);
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-light);
     border-radius: var(--radius-lg);
     overflow: hidden;
-    box-shadow: var(--shadow-sm);
-    /* 아코디언은 최대한 정적으로 유지 (불필요한 트랜지션 제거) */
-    transition: none;
+    box-shadow: var(--shadow-sm), 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+    transition: all var(--transition-base);
     cursor: default;
-    margin-bottom: 8px;
+    margin-bottom: 12px;
+}
+
+.accordion-group:hover {
+    border-color: var(--border);
+    box-shadow: var(--shadow-md), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+    transform: translateY(-1px);
 }
 
 /* 카드 호버 시에도 모양/색상 변동 없음 (완전 고정) */
@@ -811,7 +906,9 @@ body {
 }
 
 .account-item:hover {
-    background: var(--card-hover);
+    background: linear-gradient(90deg, rgba(44, 44, 46, 0.4) 0%, rgba(44, 44, 46, 0.6) 100%);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
 
 .account-item.dragging {
@@ -881,27 +978,50 @@ body {
 }
 
 .btn-copy {
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border);
+    background: rgba(44, 44, 46, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--border-light);
     color: var(--text-secondary);
     cursor: pointer;
     font-size: 14px;
-    padding: 4px 8px;
+    padding: 6px 10px;
     border-radius: var(--radius-sm);
-    transition: all var(--transition-fast);
+    transition: all var(--transition-base);
     flex-shrink: 0;
-    min-width: 32px;
-    min-height: 28px;
+    min-width: 36px;
+    min-height: 32px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     -webkit-tap-highlight-color: transparent;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-copy::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: var(--accent-light);
+    transform: translate(-50%, -50%);
+    transition: width 0.3s, height 0.3s;
+}
+
+.btn-copy:hover::before {
+    width: 100px;
+    height: 100px;
 }
 
 .btn-copy:hover {
     background: var(--accent);
     border-color: var(--accent);
     color: white;
+    box-shadow: var(--shadow-sm), var(--shadow-glow);
     transform: scale(1.05);
 }
 
@@ -955,18 +1075,20 @@ body {
 /* 토스트 메시지 */
 .toast {
     position: fixed;
-    bottom: 24px;
+    bottom: 32px;
     left: 50%;
-    transform: translateX(-50%) translateY(100px);
-    background: var(--bg-secondary);
+    transform: translateX(-50%) translateY(100px) scale(0.9);
+    background: var(--glass-bg);
+    backdrop-filter: saturate(180%) blur(30px);
+    -webkit-backdrop-filter: saturate(180%) blur(30px);
     border: 1px solid var(--border);
     color: var(--text-primary);
-    padding: 12px 24px;
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-lg);
+    padding: 14px 28px;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
     z-index: 10000;
     opacity: 0;
-    transition: all var(--transition-base);
+    transition: all var(--transition-bounce);
     font-size: 14px;
     font-weight: 500;
     pointer-events: none;
@@ -974,7 +1096,7 @@ body {
 
 .toast.show {
     opacity: 1;
-    transform: translateX(-50%) translateY(0);
+    transform: translateX(-50%) translateY(0) scale(1);
 }
 
 .toast-success {
@@ -1117,9 +1239,9 @@ body {
     width: 100%;
     height: 100%;
     height: 100dvh;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: saturate(180%) blur(20px);
-    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: saturate(180%) blur(30px);
+    -webkit-backdrop-filter: saturate(180%) blur(30px);
     z-index: 1000;
     align-items: center;
     justify-content: center;
@@ -1135,20 +1257,33 @@ body {
 }
 
 .modal-content {
-    background: var(--bg-secondary);
+    background: var(--glass-bg);
+    backdrop-filter: saturate(180%) blur(40px);
+    -webkit-backdrop-filter: saturate(180%) blur(40px);
     border: 1px solid var(--border);
-    border-radius: var(--radius-xl);
+    border-radius: var(--radius-2xl);
     width: 100%;
-    max-width: 520px;
+    max-width: 540px;
     max-height: 90vh;
     max-height: 90dvh;
     overflow-y: auto;
     overflow-x: hidden;
-    box-shadow: var(--shadow-lg);
-    transform: scale(0.95);
-    transition: transform var(--transition-base);
+    box-shadow: var(--shadow-xl), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+    transform: scale(0.96);
+    transition: all var(--transition-base);
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
+    position: relative;
+}
+
+.modal-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
 }
 
 .modal-content::-webkit-scrollbar {
@@ -1162,13 +1297,13 @@ body {
 
 .modal.active .modal-content {
     transform: scale(1);
-    animation: modalSlideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: modalSlideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 @keyframes modalSlideUp {
     from {
         opacity: 0;
-        transform: translateY(20px) scale(0.95);
+        transform: translateY(30px) scale(0.94);
     }
     to {
         opacity: 1;
@@ -1240,8 +1375,10 @@ body {
 .form-group textarea {
     width: 100%;
     padding: 14px 18px;
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border);
+    background: rgba(44, 44, 46, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--border-light);
     border-radius: var(--radius-md);
     color: var(--text-primary);
     font-size: 16px;
@@ -1255,8 +1392,9 @@ body {
 .form-group textarea:focus {
     outline: none;
     border-color: var(--accent);
-    background: var(--bg-secondary);
-    box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.1);
+    background: rgba(44, 44, 46, 0.8);
+    box-shadow: 0 0 0 4px var(--accent-light), var(--shadow-md);
+    transform: translateY(-1px);
 }
 
 .form-group textarea {
@@ -1289,6 +1427,18 @@ body {
 .modal-actions .btn-secondary {
     width: auto;
     padding: 12px 24px;
+}
+
+.modal-body {
+    padding: 0 24px;
+    margin-bottom: 24px;
+}
+
+.modal-body p {
+    color: var(--text-secondary);
+    font-size: 15px;
+    line-height: 1.6;
+    margin: 0;
 }
 
 /* 성능 최적화 (불필요한 will-change 제거로 레이아웃 안정화) */
