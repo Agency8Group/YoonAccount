@@ -15,6 +15,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
+    <!-- 매트릭스 배경 애니메이션 -->
+    <div class="matrix-container">
+        <div class="matrix-pattern" id="matrixPattern"></div>
+    </div>
+    
     <!-- 로그인 화면 -->
     <div id="loginScreen" class="screen">
         <div class="login-container">
@@ -67,19 +72,19 @@
                             <input type="text" id="globalSearchInput" placeholder="서비스명, 아이디, 보험사, 메모 등 전체 검색" />
                         </div>
                         <div class="excel-actions">
-                            <button id="downloadExcelBtn" class="btn-secondary" title="엑셀 다운로드">
-                                <span class="icon">📥</span>
-                                <span class="btn-text">엑셀 다운로드</span>
+                            <button id="downloadExcelBtn" class="btn-secondary" title="Download Excel">
+                                <span class="icon">⬇</span>
+                                <span class="btn-text">Download</span>
                             </button>
-                            <button id="openUploadExcelBtn" class="btn-secondary" title="엑셀 업로드">
-                                <span class="icon">📤</span>
-                                <span class="btn-text">엑셀 업로드</span>
+                            <button id="openUploadExcelBtn" class="btn-secondary" title="Upload Excel">
+                                <span class="icon">⬆</span>
+                                <span class="btn-text">Upload</span>
                             </button>
                             <input type="file" id="uploadExcelInput" accept=".xlsx,.xls" style="display: none;">
                         </div>
                         <button id="addAccountBtn" class="btn-primary">
                             <span class="icon">+</span>
-                            신규정보 추가
+                            Add New
                         </button>
                     </div>
                 </div>

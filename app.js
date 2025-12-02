@@ -1,3 +1,40 @@
+// 매트릭스 배경 생성
+function initMatrixBackground() {
+    const matrixPattern = document.getElementById('matrixPattern');
+    if (!matrixPattern) return;
+    
+    // 기존 컬럼 제거
+    matrixPattern.innerHTML = '';
+    
+    // 화면 너비에 맞게 컬럼 개수 계산 (각 컬럼 간격 25px)
+    const screenWidth = window.innerWidth;
+    const columnSpacing = 25;
+    const numColumns = Math.ceil(screenWidth / columnSpacing) + 5; // 여유분 추가
+    
+    // 컬럼 생성
+    for (let i = 1; i <= numColumns; i++) {
+        const column = document.createElement('div');
+        column.className = 'matrix-column';
+        column.style.left = `${(i - 1) * columnSpacing}px`;
+        // 랜덤 애니메이션 딜레이와 지속시간
+        const delay = -(Math.random() * 4);
+        const duration = 2 + Math.random() * 2.5;
+        column.style.animationDelay = `${delay}s`;
+        column.style.animationDuration = `${duration}s`;
+        matrixPattern.appendChild(column);
+    }
+}
+
+// 화면 크기 변경 시 매트릭스 재생성
+window.addEventListener('resize', () => {
+    initMatrixBackground();
+});
+
+// 페이지 로드 시 매트릭스 배경 초기화
+document.addEventListener('DOMContentLoaded', () => {
+    initMatrixBackground();
+});
+
 // Firebase 연결 상태 확인
 function checkFirebaseConnection() {
     const loginStatusDot = document.getElementById('loginStatusDot');
@@ -424,8 +461,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (downloadExcelBtn) {
         downloadExcelBtn.addEventListener('click', () => {
             openConfirmModal(
-                '엑셀 다운로드',
-                '현재 계정 / 은행 / 보험 / 기타 정보를 엑셀 파일로 저장할까요?',
+                'Download Excel',
+                'Save all accounts, banks, insurance, and other information to an Excel file?',
                 () => {
                     downloadExcel();
                 }
@@ -454,7 +491,7 @@ function openModal(type, itemId = null) {
     
     if (type === 'insurance') {
         // 보험정보: 엑셀 컬럼 순서 (보험사명 → 보험서비스 → 보험번호 → 아이디 → 비밀번호 → 메모)
-        document.getElementById('modalTitle').textContent = itemId ? '보험정보 수정' : '새 보험정보 추가';
+        document.getElementById('modalTitle').textContent = itemId ? 'Edit Insurance' : 'Add Insurance';
         insuranceFields.style.display = 'block';
         insuranceFields2.style.display = 'block';
         accountSiteUrlField.style.display = 'none';
@@ -468,7 +505,7 @@ function openModal(type, itemId = null) {
         passwordInput.required = false;
         serviceNameInput.required = true;
     } else if (type === 'bank') {
-        document.getElementById('modalTitle').textContent = itemId ? '은행정보 수정' : '새 은행정보 추가';
+        document.getElementById('modalTitle').textContent = itemId ? 'Edit Bank' : 'Add Bank';
         insuranceFields.style.display = 'none';
         insuranceFields2.style.display = 'none';
         accountSiteUrlField.style.display = 'none';
@@ -482,7 +519,7 @@ function openModal(type, itemId = null) {
         serviceNameInput.required = true;
     } else if (type === 'extra') {
         // 기타정보: 엑셀 컬럼 순서 (항목명 → 내용)
-        document.getElementById('modalTitle').textContent = itemId ? '기타정보 수정' : '새 기타정보 추가';
+        document.getElementById('modalTitle').textContent = itemId ? 'Edit Extra' : 'Add Extra';
         insuranceFields.style.display = 'none';
         insuranceFields2.style.display = 'none';
         accountSiteUrlField.style.display = 'none';
@@ -497,7 +534,7 @@ function openModal(type, itemId = null) {
         serviceNameInput.required = false;
     } else if (type === 'wifi') {
         // 와이파이정보: 와이파이 이름 → 비밀번호 → 메모
-        document.getElementById('modalTitle').textContent = itemId ? '와이파이정보 수정' : '새 와이파이정보 추가';
+        document.getElementById('modalTitle').textContent = itemId ? 'Edit WiFi' : 'Add WiFi';
         insuranceFields.style.display = 'none';
         insuranceFields2.style.display = 'none';
         accountSiteUrlField.style.display = 'none';
@@ -511,7 +548,7 @@ function openModal(type, itemId = null) {
         passwordInput.required = true;
         serviceNameInput.required = true;
     } else {
-        document.getElementById('modalTitle').textContent = itemId ? '계정 수정' : '새 계정 추가';
+        document.getElementById('modalTitle').textContent = itemId ? 'Edit Account' : 'Add Account';
         insuranceFields.style.display = 'none';
         insuranceFields2.style.display = 'none';
         accountSiteUrlField.style.display = 'block';
@@ -1854,15 +1891,15 @@ async function downloadExcel() {
         XLSX.writeFile(wb, fileName);
 
         alert(
-            `엑셀 파일이 다운로드되었습니다.\n\n` +
-            `계정: ${accounts.length}개\n` +
-            `보험정보: ${insurance.length}개\n` +
-            `기타정보: ${extras.length}개\n` +
-            `와이파이정보: ${wifi.length}개`
+            `Excel file downloaded successfully.\n\n` +
+            `Accounts: ${accounts.length}\n` +
+            `Insurance: ${insurance.length}\n` +
+            `Extras: ${extras.length}\n` +
+            `WiFi: ${wifi.length}`
         );
     } catch (error) {
-        console.error('엑셀 다운로드 오류:', error);
-        alert('엑셀 다운로드 중 오류가 발생했습니다.');
+        console.error('Excel download error:', error);
+        alert('An error occurred while downloading the Excel file.');
     }
 }
 
@@ -2190,28 +2227,28 @@ async function uploadExcel(file) {
                 await loadData();
                 
                 // 결과 표시
-                let message = `엑셀 업로드 완료!\n\n`;
-                message += `성공: ${totalAdded}개\n`;
-                message += `실패: ${totalSkipped}개`;
+                let message = `Excel upload completed!\n\n`;
+                message += `Success: ${totalAdded}\n`;
+                message += `Failed: ${totalSkipped}`;
                 
                 if (errors.length > 0 && errors.length <= 10) {
-                    message += `\n\n오류:\n${errors.slice(0, 10).join('\n')}`;
+                    message += `\n\nErrors:\n${errors.slice(0, 10).join('\n')}`;
                 } else if (errors.length > 10) {
-                    message += `\n\n오류: ${errors.length}개 (처음 10개만 표시)`;
+                    message += `\n\nErrors: ${errors.length} (showing first 10)`;
                 }
                 
                 alert(message);
                 
             } catch (error) {
-                console.error('엑셀 파싱 오류:', error);
-                alert('엑셀 파일을 읽는 중 오류가 발생했습니다.\n\n파일 형식을 확인해주세요.');
+                console.error('Excel parsing error:', error);
+                alert('An error occurred while reading the Excel file.\n\nPlease check the file format.');
             }
         };
         
         reader.readAsArrayBuffer(file);
     } catch (error) {
-        console.error('엑셀 업로드 오류:', error);
-        alert('엑셀 업로드 중 오류가 발생했습니다.');
+        console.error('Excel upload error:', error);
+        alert('An error occurred while uploading the Excel file.');
     }
 }
 
@@ -2225,8 +2262,8 @@ if (openUploadExcelBtn && uploadExcelInput) {
     // 1단계: 버튼 클릭 시 확인 모달 먼저
     openUploadExcelBtn.addEventListener('click', () => {
         openConfirmModal(
-            '엑셀 업로드',
-            '엑셀 파일을 업로드해서 기존 데이터에 추가할까요?',
+            'Upload Excel',
+            'Upload an Excel file to add data to existing records?',
             () => {
                 // 확인 시에만 파일 선택창 열기
                 uploadExcelInput.click();
