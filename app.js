@@ -859,11 +859,11 @@ function renderAccounts(accounts, keyword = '') {
                         <input type="text" 
                                class="group-name-input" 
                                value="${escapeHtml(group.name)}" 
+                               readonly
+                               disabled
                                onclick="event.stopPropagation()"
-                               onblur="updateGroupName('${groupId}', this.value, '${escapeHtml(group.originalKey || group.name)}')"
-                               onkeypress="if(event.key==='Enter') this.blur()"
                                data-group-id="${groupId}"
-                               title="그룹 이름을 수정하려면 클릭하세요">
+                               title="${escapeHtml(group.name)}">
                         <span class="group-count">(${group.accounts.length})</span>
                         ${group.url ? `<a href="${escapeHtml(group.url)}" target="_blank" rel="noopener noreferrer" class="group-url" onclick="event.stopPropagation()" title="${escapeHtml(group.url)}">${escapeHtml(group.url.length > 30 ? group.url.substring(0, 30) + '...' : group.url)}</a>` : ''}
                     </div>

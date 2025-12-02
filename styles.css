@@ -840,13 +840,22 @@ body {
     min-width: 0;
     transition: all var(--transition-fast);
     max-width: 200px;
+    cursor: default;
+    pointer-events: none;
+}
+
+.group-name-input:disabled {
+    opacity: 1;
+    color: var(--text-primary);
+    -webkit-text-fill-color: var(--text-primary);
+    cursor: default;
 }
 
 .group-name-input:focus {
     outline: none;
-    border-color: var(--accent);
-    background: var(--bg-tertiary);
-    box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.1);
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
 }
 
 .group-count {
