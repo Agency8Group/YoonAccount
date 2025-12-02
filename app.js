@@ -57,15 +57,15 @@ function checkFirebaseConnection() {
         if (text) {
             text.classList.remove('connected', 'disconnected', 'warning');
             if (isConnected) {
-                text.textContent = '서버 연결 상태 정상';
+                text.textContent = 'Server connection: OK';
                 text.classList.add('connected');
             } else if (errorMessage.includes('permission-denied') || errorMessage.includes('API')) {
-                text.textContent = '서버 연결 상태 제한됨';
+                text.textContent = 'Server connection: Limited';
                 text.classList.add('warning');
                 // 툴팁 추가
-                text.title = '일부 기능이 제한될 수 있습니다.';
+                text.title = 'Some features may be limited.';
             } else {
-                text.textContent = '서버 연결 상태 확인 불가';
+                text.textContent = 'Unable to check server connection';
                 text.classList.add('disconnected');
             }
         }
