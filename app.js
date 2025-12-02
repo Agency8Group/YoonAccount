@@ -330,6 +330,8 @@ document.querySelectorAll('.tab').forEach(tab => {
             document.getElementById('insuranceTab').classList.add('active');
         } else if (tabName === 'extras') {
             document.getElementById('extrasTab').classList.add('active');
+        } else if (tabName === 'wifi') {
+            document.getElementById('wifiTab').classList.add('active');
         }
     });
 });
@@ -348,6 +350,8 @@ document.getElementById('addAccountBtn').addEventListener('click', () => {
         openModal('insurance');
     } else if (activeTab === 'extras') {
         openModal('extra');
+    } else if (activeTab === 'wifi') {
+        openModal('wifi');
     }
 });
 
@@ -415,10 +419,26 @@ function openModal(type, itemId = null) {
         usernameInput.required = false;
         passwordInput.required = false;
         serviceNameInput.required = false;
+    } else if (type === 'wifi') {
+        // 와이파이정보: 와이파이 이름 → 비밀번호 → 메모
+        document.getElementById('modalTitle').textContent = itemId ? '와이파이정보 수정' : '새 와이파이정보 추가';
+        insuranceFields.style.display = 'none';
+        insuranceFields2.style.display = 'none';
+        accountSiteUrlField.style.display = 'none';
+        usernameField.style.display = 'none';
+        passwordField.style.display = 'block';
+        serviceNameLabel.textContent = '와이파이 이름 (SSID)';
+        notesLabel.textContent = '메모';
+        if (usernameLabel) usernameLabel.textContent = '아이디 (이메일)';
+        // 와이파이정보: 와이파이 이름과 비밀번호는 필수
+        usernameInput.required = false;
+        passwordInput.required = true;
+        serviceNameInput.required = true;
     } else {
         document.getElementById('modalTitle').textContent = itemId ? '계정 수정' : '새 계정 추가';
         insuranceFields.style.display = 'none';
         insuranceFields2.style.display = 'none';
+        wifiFields.style.display = 'none';
         accountSiteUrlField.style.display = 'block';
         usernameField.style.display = 'block';
         passwordField.style.display = 'block';
@@ -586,6 +606,25 @@ document.getElementById('accountForm').addEventListener('submit', async (e) => {
             userId: user.uid,
             updatedAt: Date.now()
         };
+    } else if (currentItemType === 'wifi') {
+        // 와이파이정보: 와이파이 이름과 비밀번호 필수
+        if (!serviceName || !password) {
+            alert('와이파이 이름과 비밀번호는 필수 입력 항목입니다.');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalBtnText;
+            }
+            return;
+        }
+
+        itemData = {
+            serviceName,            // 와이파이 이름 (SSID)
+            password,               // 비밀번호
+            notes,                  // 메모
+            type: currentItemType,
+            userId: user.uid,
+            updatedAt: Date.now()
+        };
     }
     
     console.log('저장할 데이터:', itemData);
@@ -690,6 +729,7 @@ async function loadData() {
         window.__allBanks = [];
         window.__allInsurance = [];
         window.__allExtras = [];
+        window.__allWifi = [];
         
         if (snapshot.exists()) {
             snapshot.forEach((childSnapshot) => {
@@ -703,6 +743,8 @@ async function loadData() {
                     window.__allInsurance.push(data);
                 } else if (data.type === 'extra') {
                     window.__allExtras.push(data);
+                } else if (data.type === 'wifi') {
+                    window.__allWifi.push(data);
                 }
             });
         }
@@ -715,6 +757,7 @@ async function loadData() {
         window.__allBanks.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
         window.__allInsurance.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
         window.__allExtras.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+        window.__allWifi.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
 
         applySearchFilter(); // 검색어 반영해서 렌더링
     } catch (error) {
@@ -757,7 +800,7 @@ function highlightMatches(text, query) {
     return escapeHtml(safeText).replace(regex, (match) => `<span class="highlight">${match}</span>`);
 }
 
-// 검색 필터 적용 (계정 + 은행 + 보험 + 기타)
+// 검색 필터 적용 (계정 + 은행 + 보험 + 기타 + 와이파이)
 function applySearchFilter() {
     const queryInput = document.getElementById('globalSearchInput');
     const keyword = (queryInput ? queryInput.value : '').trim().toLowerCase();
@@ -802,11 +845,21 @@ function applySearchFilter() {
             (item.notes || '');
         return target.toLowerCase().includes(keyword);
     });
+
+    const wifi = (window.__allWifi || []).filter(item => {
+        if (!keyword) return true;
+        const target =
+            (item.serviceName || '') +   // 와이파이 이름
+            (item.password || '') +      // 비밀번호
+            (item.notes || '');
+        return target.toLowerCase().includes(keyword);
+    });
     
     renderAccounts(accounts, keyword);
     renderBanks(banks, keyword);
     renderInsurance(insurance, keyword);
     renderExtras(extras, keyword);
+    renderWifi(wifi, keyword);
 }
 
 // 계정 렌더링 (아코디언 형태)
@@ -1111,6 +1164,61 @@ function renderExtras(extrasList, keyword = '') {
     `;
 }
 
+// 와이파이정보 렌더링 (아코디언 형태)
+function renderWifi(wifiList, keyword = '') {
+    const container = document.getElementById('wifiList');
+    
+    if (wifiList.length === 0) {
+        container.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 40px;">등록된 와이파이 정보가 없습니다.</p>';
+        return;
+    }
+
+    const groupId = 'wifi-group';
+
+    container.innerHTML = `
+        <div class="accordion-group" data-group-key="와이파이정보" draggable="false">
+            <div class="accordion-header" onclick="toggleAccordion('${groupId}', this)">
+                <div class="accordion-header-content">
+                    <span class="group-name-input" style="border: none; padding-left: 0; cursor: default;" readonly>와이파이정보 (${wifiList.length})</span>
+                </div>
+                <div class="accordion-actions"></div>
+            </div>
+            <div class="accordion-content" id="${groupId}" style="display: none">
+                ${wifiList.map(wifi => `
+                    <div class="account-item" draggable="false" data-account-id="${wifi.id}">
+                        <div class="account-item-content">
+                            <div class="account-item-info">
+                                <div class="account-item-title">
+                                    ${highlightMatches(wifi.serviceName || '', keyword)}
+                                </div>
+                                <div class="account-item-credentials">
+                                    <div class="credential-row">
+                                        <span class="credential-label">비밀번호:</span>
+                                        <span class="credential-value" id="password-${wifi.id}">${highlightMatches(wifi.password || '', keyword)}</span>
+                                        <button class="btn-copy" data-copy-text="${escapeHtml(wifi.password || '')}" data-target-id="password-${wifi.id}" title="비밀번호 복사">📋</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="account-item-actions">
+                                <button class="btn-icon-small" onclick="editItem('wifi', '${wifi.id}')" title="수정">✏️</button>
+                                <button class="btn-icon-small" onclick="deleteItem('${wifi.id}')" title="삭제">🗑️</button>
+                            </div>
+                        </div>
+                        ${wifi.notes ? `
+                        <div class="account-item-details" style="display: block;">
+                            <div class="card-notes"><strong>메모:</strong> ${highlightMatches(wifi.notes, keyword)}</div>
+                        </div>
+                        ` : ''}
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+    
+    // 복사 버튼 이벤트 초기화
+    initializeCopyButtons();
+}
+
 // 수정 모드로 데이터 로드
 async function loadItemForEdit(type, itemId) {
     try {
@@ -1134,6 +1242,11 @@ async function loadItemForEdit(type, itemId) {
             document.getElementById('insuranceNumber').value = data.insuranceNumber || '';
         } else if (type === 'extra') {
             // 기타정보는 serviceName, notes만 사용
+            document.getElementById('siteUrl').value = '';
+            document.getElementById('insuranceCompany').value = '';
+            document.getElementById('insuranceNumber').value = '';
+        } else if (type === 'wifi') {
+            // 와이파이정보는 serviceName, password, notes만 사용
             document.getElementById('siteUrl').value = '';
             document.getElementById('insuranceCompany').value = '';
             document.getElementById('insuranceNumber').value = '';
@@ -1544,6 +1657,7 @@ async function downloadExcel() {
         const banks = [];
         const insurance = [];
         const extras = [];
+        const wifi = [];
 
         if (snapshot.exists()) {
             snapshot.forEach((childSnapshot) => {
@@ -1556,6 +1670,8 @@ async function downloadExcel() {
                     insurance.push(data);
                 } else if (data.type === 'extra') {
                     extras.push(data);
+                } else if (data.type === 'wifi') {
+                    wifi.push(data);
                 }
             });
         }
@@ -1655,6 +1771,27 @@ async function downloadExcel() {
             extraData.length > 0 ? extraData : [extraBaseRow]
         );
         XLSX.utils.book_append_sheet(wb, extraWs, '기타정보');
+
+        // 5시트: 와이파이정보
+        const wifiBaseRow = {
+            '와이파이 이름 (SSID)': '',
+            '비밀번호': '',
+            '메모': '',
+            '등록일': '',
+            '수정일': ''
+        };
+        const wifiData = wifi.map(item => ({
+            '와이파이 이름 (SSID)': item.serviceName || '',
+            '비밀번호': item.password || '',
+            '메모': item.notes || '',
+            '등록일': item.createdAt ? new Date(item.createdAt).toLocaleString('ko-KR') : '',
+            '수정일': item.updatedAt ? new Date(item.updatedAt).toLocaleString('ko-KR') : ''
+        }));
+
+        const wifiWs = XLSX.utils.json_to_sheet(
+            wifiData.length > 0 ? wifiData : [wifiBaseRow]
+        );
+        XLSX.utils.book_append_sheet(wb, wifiWs, '와이파이정보');
         
         // 파일 다운로드
         const fileName = `계정관리_${new Date().toISOString().split('T')[0]}.xlsx`;
@@ -1664,7 +1801,8 @@ async function downloadExcel() {
             `엑셀 파일이 다운로드되었습니다.\n\n` +
             `계정: ${accounts.length}개\n` +
             `보험정보: ${insurance.length}개\n` +
-            `기타정보: ${extras.length}개`
+            `기타정보: ${extras.length}개\n` +
+            `와이파이정보: ${wifi.length}개`
         );
     } catch (error) {
         console.error('엑셀 다운로드 오류:', error);
@@ -1713,6 +1851,9 @@ async function uploadExcel(file) {
                 const extraSheetName =
                     sheetNames.find(name => name === '기타정보') ||
                     (sheetNames.length > 2 ? sheetNames[2] : null);
+                const wifiSheetName =
+                    sheetNames.find(name => name === '와이파이정보') ||
+                    (sheetNames.length > 3 ? sheetNames[3] : null);
 
                 // 1시트: 계정
                 if (accountSheetName) {
@@ -1934,6 +2075,54 @@ async function uploadExcel(file) {
                         } catch (error) {
                             totalSkipped++;
                             errors.push(`기타정보 시트 ${index + 2}행: ${error.message}`);
+                        }
+                    });
+                }
+
+                // 5시트: 와이파이정보
+                if (wifiSheetName) {
+                    const wifiSheet = workbook.Sheets[wifiSheetName];
+                    const wifiRows = XLSX.utils.sheet_to_json(wifiSheet);
+
+                    wifiRows.forEach((row, index) => {
+                        try {
+                            const wifiName =
+                                row['와이파이 이름 (SSID)'] ||
+                                row['와이파이 이름'] ||
+                                row['SSID'] ||
+                                row['이름'] ||
+                                '';
+                            const password = row['비밀번호'] || '';
+
+                            if (!wifiName || !password) {
+                                totalSkipped++;
+                                errors.push(`와이파이정보 시트 ${index + 2}행: 필수 필드 누락 (와이파이 이름, 비밀번호 필요)`);
+                                return;
+                            }
+
+                            const itemData = {
+                                serviceName: String(wifiName).trim(),
+                                password: String(password).trim(),
+                                notes: String(row['메모'] || '').trim(),
+                                type: 'wifi',
+                                userId: user.uid,
+                                createdAt: Date.now(),
+                                updatedAt: Date.now()
+                            };
+
+                            const promise = db.ref('items').push(itemData)
+                                .then(() => {
+                                    totalAdded++;
+                                })
+                                .catch(error => {
+                                    totalSkipped++;
+                                    errors.push(`와이파이정보 시트 ${index + 2}행: ${error.message}`);
+                                });
+
+                            promises.push(promise);
+                        } catch (error) {
+                            totalSkipped++;
+                            errors.push(`와이파이정보 시트 ${index + 2}행: ${error.message}`);
                         }
                     });
                 }
