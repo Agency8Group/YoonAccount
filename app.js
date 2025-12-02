@@ -1032,18 +1032,18 @@ function renderAccounts(accounts, keyword = '') {
                                         <div class="credential-row">
                                             <span class="credential-label">아이디:</span>
                                             <span class="credential-value" id="username-${account.id}">${highlightMatches(account.username || '', keyword)}</span>
-                                            <button class="btn-copy" data-copy-text="${escapeHtml(account.username || '')}" data-target-id="username-${account.id}" title="아이디 복사">📋</button>
+                                            <button class="btn-copy" data-copy-text="${escapeHtml(account.username || '')}" data-target-id="username-${account.id}" title="Copy ID">⧉</button>
                                         </div>
                                         <div class="credential-row">
                                             <span class="credential-label">비밀번호:</span>
                                             <span class="credential-value" id="password-${account.id}">${highlightMatches(account.password || '', keyword)}</span>
-                                            <button class="btn-copy" data-copy-text="${escapeHtml(account.password || '')}" data-target-id="password-${account.id}" title="비밀번호 복사">📋</button>
+                                            <button class="btn-copy" data-copy-text="${escapeHtml(account.password || '')}" data-target-id="password-${account.id}" title="Copy Password">⧉</button>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="account-item-actions" onclick="event.stopPropagation()">
-                                    <button class="btn-icon-small" onclick="editItem('account', '${account.id}')" title="수정">✏️</button>
-                                    <button class="btn-icon-small" onclick="deleteItem('${account.id}')" title="삭제">🗑️</button>
+                                    <button class="btn-icon-small" onclick="editItem('account', '${account.id}')" title="Edit">✎</button>
+                                    <button class="btn-icon-small" onclick="deleteItem('${account.id}')" title="Delete">✕</button>
                                 </div>
                             </div>
                             ${account.notes ? `
@@ -1135,8 +1135,8 @@ function renderInsurance(insuranceList, keyword = '') {
                                 </div>
                             </div>
                             <div class="account-item-actions">
-                                <button class="btn-icon-small" onclick="editItem('insurance', '${insurance.id}')" title="수정">✏️</button>
-                                <button class="btn-icon-small" onclick="deleteItem('${insurance.id}')" title="삭제">🗑️</button>
+                                <button class="btn-icon-small" onclick="editItem('insurance', '${insurance.id}')" title="Edit">✎</button>
+                                <button class="btn-icon-small" onclick="deleteItem('${insurance.id}')" title="Delete">✕</button>
                             </div>
                         </div>
                         ${insurance.notes ? `
@@ -1196,8 +1196,8 @@ function renderBanks(bankList, keyword = '') {
                                 </div>
                             </div>
                             <div class="account-item-actions">
-                                <button class="btn-icon-small" onclick="editItem('bank', '${bank.id}')" title="수정">✏️</button>
-                                <button class="btn-icon-small" onclick="deleteItem('${bank.id}')" title="삭제">🗑️</button>
+                                <button class="btn-icon-small" onclick="editItem('bank', '${bank.id}')" title="Edit">✎</button>
+                                <button class="btn-icon-small" onclick="deleteItem('${bank.id}')" title="Delete">✕</button>
                             </div>
                         </div>
                         ${bank.notes ? `
@@ -1251,8 +1251,8 @@ function renderExtras(extrasList, keyword = '') {
                                 ` : ''}
                             </div>
                             <div class="account-item-actions">
-                                <button class="btn-icon-small" onclick="editItem('extra', '${extra.id}')" title="수정">✏️</button>
-                                <button class="btn-icon-small" onclick="deleteItem('${extra.id}')" title="삭제">🗑️</button>
+                                <button class="btn-icon-small" onclick="editItem('extra', '${extra.id}')" title="Edit">✎</button>
+                                <button class="btn-icon-small" onclick="deleteItem('${extra.id}')" title="Delete">✕</button>
                             </div>
                         </div>
                     </div>
@@ -1293,13 +1293,13 @@ function renderWifi(wifiList, keyword = '') {
                                     <div class="credential-row">
                                         <span class="credential-label">비밀번호:</span>
                                         <span class="credential-value" id="password-${wifi.id}">${highlightMatches(wifi.password || '', keyword)}</span>
-                                        <button class="btn-copy" data-copy-text="${escapeHtml(wifi.password || '')}" data-target-id="password-${wifi.id}" title="비밀번호 복사">📋</button>
+                                        <button class="btn-copy" data-copy-text="${escapeHtml(wifi.password || '')}" data-target-id="password-${wifi.id}" title="Copy Password">⧉</button>
                                     </div>
                                 </div>
                             </div>
                             <div class="account-item-actions">
-                                <button class="btn-icon-small" onclick="editItem('wifi', '${wifi.id}')" title="수정">✏️</button>
-                                <button class="btn-icon-small" onclick="deleteItem('${wifi.id}')" title="삭제">🗑️</button>
+                                <button class="btn-icon-small" onclick="editItem('wifi', '${wifi.id}')" title="Edit">✎</button>
+                                <button class="btn-icon-small" onclick="deleteItem('${wifi.id}')" title="Delete">✕</button>
                             </div>
                         </div>
                         ${wifi.notes ? `
