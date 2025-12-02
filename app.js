@@ -1,39 +1,4 @@
-// 매트릭스 배경 생성
-function initMatrixBackground() {
-    const matrixPattern = document.getElementById('matrixPattern');
-    if (!matrixPattern) return;
-    
-    // 기존 컬럼 제거
-    matrixPattern.innerHTML = '';
-    
-    // 화면 너비에 맞게 컬럼 개수 계산 (각 컬럼 간격 25px)
-    const screenWidth = window.innerWidth;
-    const columnSpacing = 25;
-    const numColumns = Math.ceil(screenWidth / columnSpacing) + 5; // 여유분 추가
-    
-    // 컬럼 생성
-    for (let i = 1; i <= numColumns; i++) {
-        const column = document.createElement('div');
-        column.className = 'matrix-column';
-        column.style.left = `${(i - 1) * columnSpacing}px`;
-        // 랜덤 애니메이션 딜레이와 지속시간
-        const delay = -(Math.random() * 4);
-        const duration = 2 + Math.random() * 2.5;
-        column.style.animationDelay = `${delay}s`;
-        column.style.animationDuration = `${duration}s`;
-        matrixPattern.appendChild(column);
-    }
-}
-
-// 화면 크기 변경 시 매트릭스 재생성
-window.addEventListener('resize', () => {
-    initMatrixBackground();
-});
-
-// 페이지 로드 시 매트릭스 배경 초기화
-document.addEventListener('DOMContentLoaded', () => {
-    initMatrixBackground();
-});
+// (기존) 매트릭스 배경 관련 코드는 성능 이슈로 제거되었습니다.
 
 // Firebase 연결 상태 확인
 function checkFirebaseConnection() {

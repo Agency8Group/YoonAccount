@@ -736,10 +736,6 @@ body {
     font-weight: 700;
     letter-spacing: -1px;
     line-height: 1.2;
-    background: linear-gradient(135deg, #ffffff 0%, rgba(255, 255, 255, 0.9) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
 }
 
 #addAccountBtn {
@@ -775,7 +771,8 @@ body {
     border: none;
     color: var(--text-secondary);
     font-size: 16px;
-    font-weight: 500;
+    /* 탭 전환 시 굵기 변경으로 인한 크기/레이아웃 튐 방지 위해 기본도 굵게 통일 */
+    font-weight: 600;
     cursor: pointer;
     border-bottom: 2px solid transparent;
     transition: all var(--transition-base);
@@ -812,7 +809,6 @@ body {
 
 .tab.active {
     color: var(--accent);
-    font-weight: 600;
 }
 
 .tab.active::after {
