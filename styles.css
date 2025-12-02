@@ -19,16 +19,16 @@
     --error: #ff3b30;
     --card-bg: #1a1a1a;
     --card-hover: #252525;
-    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.15);
-    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.2);
-    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.3);
+    --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.25);
+    --shadow-md: 0 12px 30px rgba(0, 0, 0, 0.35);
+    --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.5);
     --radius-sm: 8px;
     --radius-md: 12px;
     --radius-lg: 16px;
     --radius-xl: 20px;
-    --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-slow: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-fast: 0.18s cubic-bezier(0.22, 0.61, 0.36, 1);
+    --transition-base: 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);
+    --transition-slow: 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
 html {
@@ -178,41 +178,18 @@ body {
     font-size: 17px;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--transition-base);
+    transition: background var(--transition-fast), color var(--transition-fast), opacity var(--transition-fast);
     position: relative;
-    overflow: hidden;
     -webkit-tap-highlight-color: transparent;
     user-select: none;
 }
 
-.btn-primary::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.2);
-    transform: translate(-50%, -50%);
-    transition: width 0.6s, height 0.6s;
-}
-
-.btn-primary:active::before {
-    width: 300px;
-    height: 300px;
-}
-
 .btn-primary:hover:not(:disabled) {
     background: var(--accent-hover);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 16px rgba(0, 122, 255, 0.4);
 }
 
 .btn-primary:active:not(:disabled) {
     background: var(--accent-pressed);
-    transform: translateY(0);
-    box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
 }
 
 .btn-primary:disabled {
@@ -230,18 +207,16 @@ body {
     font-size: 15px;
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--transition-base);
+    transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), opacity var(--transition-fast);
     -webkit-tap-highlight-color: transparent;
 }
 
 .btn-secondary:hover:not(:disabled) {
     background: var(--bg-secondary);
     border-color: var(--accent);
-    transform: translateY(-1px);
 }
 
 .btn-secondary:active:not(:disabled) {
-    transform: translateY(0);
     background: var(--card-hover);
 }
 
@@ -608,12 +583,27 @@ body {
     font-weight: 500;
     cursor: pointer;
     border-bottom: 2px solid transparent;
-    transition: all var(--transition-base);
+    transition: color var(--transition-fast);
     position: relative;
     top: 1px;
     white-space: nowrap;
     min-height: 48px; /* 터치 친화적 */
     -webkit-tap-highlight-color: transparent;
+}
+
+.tab::after {
+    content: '';
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    bottom: 0;
+    height: 2px;
+    border-radius: 999px;
+    background: var(--accent);
+    transform-origin: center;
+    transform: scaleX(0);
+    opacity: 0;
+    transition: transform var(--transition-base), opacity var(--transition-fast);
 }
 
 .tab:hover {
@@ -622,8 +612,12 @@ body {
 
 .tab.active {
     color: var(--accent);
-    border-bottom-color: var(--accent);
     font-weight: 600;
+}
+
+.tab.active::after {
+    transform: scaleX(1);
+    opacity: 1;
 }
 
 .tab:active {
@@ -659,15 +653,14 @@ body {
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     overflow: hidden;
-    transition: all var(--transition-base);
-    cursor: move;
+    box-shadow: var(--shadow-sm);
+    /* 아코디언은 최대한 정적으로 유지 (불필요한 트랜지션 제거) */
+    transition: none;
+    cursor: default;
     margin-bottom: 8px;
 }
 
-.accordion-group:hover {
-    border-color: var(--accent);
-    box-shadow: var(--shadow-md);
-}
+/* 카드 호버 시에도 모양/색상 변동 없음 (완전 고정) */
 
 .accordion-group.dragging {
     opacity: 0.5;
@@ -685,13 +678,12 @@ body {
     padding: 14px 18px;
     cursor: pointer;
     user-select: none;
-    transition: background var(--transition-fast);
+    /* 헤더도 배경 트랜지션 제거해서 깜빡임 최소화 */
+    transition: none;
     min-height: 52px;
 }
 
-.accordion-header:hover {
-    background: var(--card-hover);
-}
+/* 헤더 호버 시에도 배경 유지 (색상 변화 없음) */
 
 .accordion-header-content {
     display: flex;
@@ -801,36 +793,10 @@ body {
     transition: transform var(--transition-fast);
 }
 
-/* 아코디언 콘텐츠 */
+/* 아코디언 콘텐츠: 단순 block 레이아웃 (애니메이션/트랜지션 제거) */
 .accordion-content {
     border-top: 1px solid var(--border);
     padding: 0;
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height var(--transition-base);
-}
-
-.accordion-content[style*="display: block"] {
-    overflow-y: auto;
-    overflow-x: hidden;
-    display: block !important;
-}
-
-.accordion-content[style*="display: block"]::-webkit-scrollbar {
-    width: 6px;
-}
-
-.accordion-content[style*="display: block"]::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.accordion-content[style*="display: block"]::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border-radius: 3px;
-}
-
-.accordion-content[style*="display: block"]::-webkit-scrollbar-thumb:hover {
-    background: var(--text-secondary);
 }
 
 /* 계정 항목 */
@@ -1325,14 +1291,7 @@ body {
     padding: 12px 24px;
 }
 
-/* 성능 최적화 */
-.accordion-content {
-    will-change: max-height;
-}
-
-.account-item {
-    will-change: transform;
-}
+/* 성능 최적화 (불필요한 will-change 제거로 레이아웃 안정화) */
 
 /* 반응형 */
 @media (max-width: 768px) {

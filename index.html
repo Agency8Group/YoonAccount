@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
-<head>
+    <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="mobile-web-app-capable" content="yes">
@@ -61,7 +61,7 @@
         <main class="main-content">
             <div class="container">
                 <div class="header-section">
-                    <h1>내 계정 관리</h1>
+                    <h1>yoon_account</h1>
                     <div class="header-actions">
                         <div class="search-container">
                             <input type="text" id="globalSearchInput" placeholder="서비스명, 아이디, 보험사, 메모 등 전체 검색" />
@@ -71,10 +71,10 @@
                                 <span class="icon">📥</span>
                                 <span class="btn-text">엑셀 다운로드</span>
                             </button>
-                            <label for="uploadExcelInput" class="btn-secondary" title="엑셀 업로드">
+                            <button id="openUploadExcelBtn" class="btn-secondary" title="엑셀 업로드">
                                 <span class="icon">📤</span>
                                 <span class="btn-text">엑셀 업로드</span>
-                            </label>
+                            </button>
                             <input type="file" id="uploadExcelInput" accept=".xlsx,.xls" style="display: none;">
                         </div>
                         <button id="addAccountBtn" class="btn-primary">
@@ -177,6 +177,23 @@
                     <button type="submit" class="btn-primary">저장</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- 모달: 확인용 (엑셀 다운로드/업로드 등 공통 사용) -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="confirmModalTitle">확인</h3>
+                <button class="modal-close" id="confirmModalClose">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmModalMessage">이 작업을 진행하시겠습니까?</p>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" id="confirmModalCancel">취소</button>
+                <button type="button" class="btn-primary" id="confirmModalOk">진행</button>
+            </div>
         </div>
     </div>
 
