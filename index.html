@@ -138,27 +138,15 @@
                     <input type="url" id="siteUrl" placeholder="https://example.com">
                 </div>
                 
-                <div class="form-group">
-                    <label id="serviceNameLabel">서비스 명</label>
-                    <input type="text" id="serviceName" required>
-                </div>
-                
-                <div class="form-group">
-                    <label id="usernameLabel">아이디 (이메일)</label>
-                    <input type="text" id="username" required>
-                </div>
-                
-                <div class="form-group">
-                    <label>비밀번호</label>
-                    <div class="password-input-group">
-                        <input type="password" id="password" required>
-                        <button type="button" class="btn-icon" id="togglePassword">👁️</button>
-                    </div>
-                </div>
-                
+                <!-- 보험정보 필드: 엑셀 컬럼 순서대로 (보험사명 → 보험서비스 → 보험번호 → 아이디 → 비밀번호 → 메모) -->
                 <div class="form-group" id="insuranceFields" style="display: none;">
                     <label>보험사명</label>
                     <input type="text" id="insuranceCompany">
+                </div>
+                
+                <div class="form-group">
+                    <label id="serviceNameLabel">서비스 명</label>
+                    <input type="text" id="serviceName" required>
                 </div>
                 
                 <div class="form-group" id="insuranceFields2" style="display: none;">
@@ -166,8 +154,21 @@
                     <input type="text" id="insuranceNumber">
                 </div>
                 
+                <div class="form-group" id="usernameField">
+                    <label id="usernameLabel">아이디 (이메일)</label>
+                    <input type="text" id="username" required>
+                </div>
+                
+                <div class="form-group" id="passwordField">
+                    <label>비밀번호</label>
+                    <div class="password-input-group">
+                        <input type="password" id="password" required>
+                        <button type="button" class="btn-icon" id="togglePassword">👁️</button>
+                    </div>
+                </div>
+                
                 <div class="form-group">
-                    <label id="notesLabel">특이사항</label>
+                    <label id="notesLabel">메모</label>
                     <textarea id="notes" rows="3"></textarea>
                 </div>
                 

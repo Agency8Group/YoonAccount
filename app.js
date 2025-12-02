@@ -362,42 +362,72 @@ function openModal(type, itemId = null) {
     const insuranceFields = document.getElementById('insuranceFields');
     const insuranceFields2 = document.getElementById('insuranceFields2');
     const accountSiteUrlField = document.getElementById('accountSiteUrlField');
+    const usernameField = document.getElementById('usernameField');
+    const passwordField = document.getElementById('passwordField');
     const serviceNameLabel = document.getElementById('serviceNameLabel');
     const notesLabel = document.getElementById('notesLabel');
     const usernameLabel = document.getElementById('usernameLabel');
     
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    const serviceNameInput = document.getElementById('serviceName');
+    
     if (type === 'insurance') {
+        // 보험정보: 엑셀 컬럼 순서 (보험사명 → 보험서비스 → 보험번호 → 아이디 → 비밀번호 → 메모)
         document.getElementById('modalTitle').textContent = itemId ? '보험정보 수정' : '새 보험정보 추가';
         insuranceFields.style.display = 'block';
         insuranceFields2.style.display = 'block';
         accountSiteUrlField.style.display = 'none';
+        usernameField.style.display = 'block';
+        passwordField.style.display = 'block';
         serviceNameLabel.textContent = '보험서비스';
         notesLabel.textContent = '메모';
         if (usernameLabel) usernameLabel.textContent = '아이디(이메일)';
+        // 보험정보: 아이디는 필수, 비밀번호는 선택
+        usernameInput.required = true;
+        passwordInput.required = false;
+        serviceNameInput.required = true;
     } else if (type === 'bank') {
         document.getElementById('modalTitle').textContent = itemId ? '은행정보 수정' : '새 은행정보 추가';
         insuranceFields.style.display = 'none';
         insuranceFields2.style.display = 'none';
         accountSiteUrlField.style.display = 'none';
+        usernameField.style.display = 'block';
+        passwordField.style.display = 'block';
         serviceNameLabel.textContent = '은행명';
         notesLabel.textContent = '메모';
         if (usernameLabel) usernameLabel.textContent = '계좌번호';
+        usernameInput.required = true;
+        passwordInput.required = true;
+        serviceNameInput.required = true;
     } else if (type === 'extra') {
+        // 기타정보: 엑셀 컬럼 순서 (항목명 → 내용)
         document.getElementById('modalTitle').textContent = itemId ? '기타정보 수정' : '새 기타정보 추가';
         insuranceFields.style.display = 'none';
         insuranceFields2.style.display = 'none';
         accountSiteUrlField.style.display = 'none';
+        usernameField.style.display = 'none';
+        passwordField.style.display = 'none';
         serviceNameLabel.textContent = '항목명';
         notesLabel.textContent = '내용';
         if (usernameLabel) usernameLabel.textContent = '아이디 (이메일)';
+        // 기타정보: 아이디와 비밀번호는 필요 없음, 항목명 또는 내용만 있으면 됨
+        usernameInput.required = false;
+        passwordInput.required = false;
+        serviceNameInput.required = false;
     } else {
         document.getElementById('modalTitle').textContent = itemId ? '계정 수정' : '새 계정 추가';
         insuranceFields.style.display = 'none';
         insuranceFields2.style.display = 'none';
         accountSiteUrlField.style.display = 'block';
+        usernameField.style.display = 'block';
+        passwordField.style.display = 'block';
         serviceNameLabel.textContent = '서비스 명';
         notesLabel.textContent = '메모';
         if (usernameLabel) usernameLabel.textContent = '아이디 (이메일)';
+        usernameInput.required = true;
+        passwordInput.required = true;
+        serviceNameInput.required = true;
     }
     
     if (itemId) {
