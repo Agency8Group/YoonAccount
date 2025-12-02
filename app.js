@@ -199,82 +199,92 @@ function showMainScreen(user) {
 
 // 회원가입 기능 비활성화됨
 
-// 로그인
-document.getElementById('loginForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = document.getElementById('loginEmail').value.trim();
-    const password = document.getElementById('loginPassword').value;
-    const errorDiv = document.getElementById('authError');
-    const submitBtn = document.querySelector('#loginForm button[type="submit"]');
-    const originalBtnText = submitBtn ? submitBtn.textContent : '로그인';
-    
-    // 입력값 검증
-    if (!email || !password) {
-        errorDiv.textContent = '이메일과 비밀번호를 입력해주세요.';
-        return;
-    }
-    
-    // 로딩 상태 표시
-    if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.textContent = '로그인 중...';
-    }
-    errorDiv.textContent = '';
-    
-    try {
-        const userCredential = await auth.signInWithEmailAndPassword(email, password);
-        errorDiv.textContent = '';
-        // 로그인 성공 시 화면 전환은 onAuthStateChanged에서 처리됨
-    } catch (error) {
-        console.error('로그인 오류 상세:', {
-            code: error.code,
-            message: error.message,
-            email: email,
-            fullError: error
-        });
-        
-        const errorMessage = getErrorMessage(error.code, error.message);
-        
-        // too-many-requests 오류인 경우 특별 처리
-        if (error.code === 'auth/too-many-requests') {
-            errorDiv.innerHTML = errorMessage.replace(/\n/g, '<br>');
-        } else {
-            errorDiv.textContent = errorMessage;
-        }
-        
-        // 400 Bad Request 오류인 경우 추가 안내
-        if (error.code === 'auth/invalid-credential' || 
-            error.code === 'auth/user-disabled' ||
-            error.message.includes('400') ||
-            error.message.includes('Bad Request') ||
-            !error.code) {
+// 로그인 폼 이벤트 (DOMContentLoaded에서 처리)
+document.addEventListener('DOMContentLoaded', () => {
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const errorDiv = document.getElementById('authError');
+            const submitBtn = document.querySelector('#loginForm button[type="submit"]');
+            const originalBtnText = submitBtn ? submitBtn.textContent : '로그인';
             
-            // Firebase Authentication 설정 확인 안내
-            if (error.message.includes('400') || !error.code) {
-                errorDiv.innerHTML = '로그인 요청이 실패했습니다.<br><br>' +
-                    'Firebase Console에서 다음을 확인해주세요:<br>' +
-                    '1. Authentication > Sign-in method에서 이메일/비밀번호 활성화<br>' +
-                    '2. Authorized domains에 현재 도메인 추가<br>' +
-                    '3. API 키가 올바르게 설정되어 있는지 확인';
+            // 입력값 검증
+            if (!email || !password) {
+                errorDiv.textContent = '이메일과 비밀번호를 입력해주세요.';
+                return;
             }
-        }
-    } finally {
-        // 버튼 상태 복원
-        if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.textContent = originalBtnText;
-        }
+            
+            // 로딩 상태 표시
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = '로그인 중...';
+            }
+            errorDiv.textContent = '';
+            
+            try {
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                errorDiv.textContent = '';
+                // 로그인 성공 시 화면 전환은 onAuthStateChanged에서 처리됨
+            } catch (error) {
+                console.error('로그인 오류 상세:', {
+                    code: error.code,
+                    message: error.message,
+                    email: email,
+                    fullError: error
+                });
+                
+                const errorMessage = getErrorMessage(error.code, error.message);
+                
+                // too-many-requests 오류인 경우 특별 처리
+                if (error.code === 'auth/too-many-requests') {
+                    errorDiv.innerHTML = errorMessage.replace(/\n/g, '<br>');
+                } else {
+                    errorDiv.textContent = errorMessage;
+                }
+                
+                // 400 Bad Request 오류인 경우 추가 안내
+                if (error.code === 'auth/invalid-credential' || 
+                    error.code === 'auth/user-disabled' ||
+                    error.message.includes('400') ||
+                    error.message.includes('Bad Request') ||
+                    !error.code) {
+                    
+                    // Firebase Authentication 설정 확인 안내
+                    if (error.message.includes('400') || !error.code) {
+                        errorDiv.innerHTML = '로그인 요청이 실패했습니다.<br><br>' +
+                            'Firebase Console에서 다음을 확인해주세요:<br>' +
+                            '1. Authentication > Sign-in method에서 이메일/비밀번호 활성화<br>' +
+                            '2. Authorized domains에 현재 도메인 추가<br>' +
+                            '3. API 키가 올바르게 설정되어 있는지 확인';
+                    }
+                }
+            } finally {
+                // 버튼 상태 복원
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalBtnText;
+                }
+            }
+        });
     }
 });
 
 // 회원가입 기능 비활성화됨
 
-// 로그아웃
-document.getElementById('logoutBtn').addEventListener('click', async () => {
-    try {
-        await auth.signOut();
-    } catch (error) {
-        console.error('로그아웃 오류:', error);
+// 로그아웃 버튼 이벤트 (DOMContentLoaded에서 처리)
+document.addEventListener('DOMContentLoaded', () => {
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async () => {
+            try {
+                await auth.signOut();
+            } catch (error) {
+                console.error('로그아웃 오류:', error);
+            }
+        });
     }
 });
 
@@ -308,31 +318,39 @@ function getErrorMessage(errorCode, errorMessage = '') {
     return errorMessage || '오류가 발생했습니다. 다시 시도해주세요.';
 }
 
-// 탭 전환
-document.querySelectorAll('.tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-        const tabName = tab.dataset.tab;
-        
-        // 탭 활성화
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-        
-        // 컨텐츠 표시
-        document.querySelectorAll('.tab-content').forEach(content => {
-            content.classList.remove('active');
+// 탭 전환 (DOMContentLoaded에서 처리)
+document.addEventListener('DOMContentLoaded', () => {
+    const tabs = document.querySelectorAll('.tab');
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const tabName = tab.dataset.tab;
+            
+            // 탭 활성화
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            
+            // 컨텐츠 표시
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            if (tabName === 'accounts') {
+                const accountsTab = document.getElementById('accountsTab');
+                if (accountsTab) accountsTab.classList.add('active');
+            } else if (tabName === 'banks') {
+                const banksTab = document.getElementById('banksTab');
+                if (banksTab) banksTab.classList.add('active');
+            } else if (tabName === 'insurance') {
+                const insuranceTab = document.getElementById('insuranceTab');
+                if (insuranceTab) insuranceTab.classList.add('active');
+            } else if (tabName === 'extras') {
+                const extrasTab = document.getElementById('extrasTab');
+                if (extrasTab) extrasTab.classList.add('active');
+            } else if (tabName === 'wifi') {
+                const wifiTab = document.getElementById('wifiTab');
+                if (wifiTab) wifiTab.classList.add('active');
+            }
         });
-        
-        if (tabName === 'accounts') {
-            document.getElementById('accountsTab').classList.add('active');
-        } else if (tabName === 'banks') {
-            document.getElementById('banksTab').classList.add('active');
-        } else if (tabName === 'insurance') {
-            document.getElementById('insuranceTab').classList.add('active');
-        } else if (tabName === 'extras') {
-            document.getElementById('extrasTab').classList.add('active');
-        } else if (tabName === 'wifi') {
-            document.getElementById('wifiTab').classList.add('active');
-        }
     });
 });
 
@@ -340,23 +358,81 @@ document.querySelectorAll('.tab').forEach(tab => {
 let currentItemType = 'account';
 let editingItemId = null;
 
-document.getElementById('addAccountBtn').addEventListener('click', () => {
-    const activeTab = document.querySelector('.tab.active').dataset.tab;
-    if (activeTab === 'accounts') {
-        openModal('account');
-    } else if (activeTab === 'banks') {
-        openModal('bank');
-    } else if (activeTab === 'insurance') {
-        openModal('insurance');
-    } else if (activeTab === 'extras') {
-        openModal('extra');
-    } else if (activeTab === 'wifi') {
-        openModal('wifi');
+// DOM이 로드된 후 이벤트 리스너 등록
+document.addEventListener('DOMContentLoaded', () => {
+    const addAccountBtn = document.getElementById('addAccountBtn');
+    if (addAccountBtn) {
+        addAccountBtn.addEventListener('click', () => {
+            const activeTab = document.querySelector('.tab.active')?.dataset.tab;
+            if (activeTab === 'accounts') {
+                openModal('account');
+            } else if (activeTab === 'banks') {
+                openModal('bank');
+            } else if (activeTab === 'insurance') {
+                openModal('insurance');
+            } else if (activeTab === 'extras') {
+                openModal('extra');
+            } else if (activeTab === 'wifi') {
+                openModal('wifi');
+            }
+        });
+    }
+
+    const closeModalBtn = document.getElementById('closeModal');
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', closeModal);
+    }
+
+    const cancelBtn = document.getElementById('cancelBtn');
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', closeModal);
+    }
+
+    const togglePasswordBtn = document.getElementById('togglePassword');
+    if (togglePasswordBtn) {
+        togglePasswordBtn.addEventListener('click', () => {
+            const passwordInput = document.getElementById('password');
+            const toggleBtn = document.getElementById('togglePassword');
+            
+            if (passwordInput && toggleBtn) {
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    toggleBtn.textContent = '🙈';
+                } else {
+                    passwordInput.type = 'password';
+                    toggleBtn.textContent = '👁️';
+                }
+            }
+        });
+    }
+
+    const accountForm = document.getElementById('accountForm');
+    if (accountForm) {
+        accountForm.addEventListener('submit', handleFormSubmit);
+    }
+
+    const modal = document.getElementById('modal');
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target.id === 'modal') {
+                closeModal();
+            }
+        });
+    }
+
+    const downloadExcelBtn = document.getElementById('downloadExcelBtn');
+    if (downloadExcelBtn) {
+        downloadExcelBtn.addEventListener('click', () => {
+            openConfirmModal(
+                '엑셀 다운로드',
+                '현재 계정 / 은행 / 보험 / 기타 정보를 엑셀 파일로 저장할까요?',
+                () => {
+                    downloadExcel();
+                }
+            );
+        });
     }
 });
-
-document.getElementById('closeModal').addEventListener('click', closeModal);
-document.getElementById('cancelBtn').addEventListener('click', closeModal);
 
 function openModal(type, itemId = null) {
     currentItemType = type;
@@ -438,7 +514,6 @@ function openModal(type, itemId = null) {
         document.getElementById('modalTitle').textContent = itemId ? '계정 수정' : '새 계정 추가';
         insuranceFields.style.display = 'none';
         insuranceFields2.style.display = 'none';
-        wifiFields.style.display = 'none';
         accountSiteUrlField.style.display = 'block';
         usernameField.style.display = 'block';
         passwordField.style.display = 'block';
@@ -483,22 +558,8 @@ function closeModal() {
     document.body.style.overflow = '';
 }
 
-// 비밀번호 표시/숨기기
-document.getElementById('togglePassword').addEventListener('click', () => {
-    const passwordInput = document.getElementById('password');
-    const toggleBtn = document.getElementById('togglePassword');
-    
-    if (passwordInput.type === 'password') {
-        passwordInput.type = 'text';
-        toggleBtn.textContent = '🙈';
-    } else {
-        passwordInput.type = 'password';
-        toggleBtn.textContent = '👁️';
-    }
-});
-
-// 폼 제출
-document.getElementById('accountForm').addEventListener('submit', async (e) => {
+// 폼 제출 핸들러
+async function handleFormSubmit(e) {
     e.preventDefault();
     
     const user = auth.currentUser;
@@ -705,7 +766,7 @@ Firebase Console > Realtime Database > 규칙 탭에서 다음 규칙 중 하나
             submitBtn.textContent = originalBtnText;
         }
     }
-});
+}
 
 // 데이터 로드
 async function loadData() {
@@ -1574,12 +1635,7 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// 모달 외부 클릭 시 닫기
-document.getElementById('modal').addEventListener('click', (e) => {
-    if (e.target.id === 'modal') {
-        closeModal();
-    }
-});
+// 모달 외부 클릭 시 닫기는 DOMContentLoaded에서 처리됨
 
 // 공통 확인 모달
 let currentConfirmCallback = null;
@@ -2159,16 +2215,7 @@ async function uploadExcel(file) {
     }
 }
 
-// 엑셀 다운로드 버튼 이벤트 (확인 모달)
-document.getElementById('downloadExcelBtn').addEventListener('click', () => {
-    openConfirmModal(
-        '엑셀 다운로드',
-        '현재 계정 / 은행 / 보험 / 기타 정보를 엑셀 파일로 저장할까요?',
-        () => {
-            downloadExcel();
-        }
-    );
-});
+// 엑셀 다운로드 버튼 이벤트는 DOMContentLoaded에서 처리됨
 
 // 엑셀 업로드 버튼 이벤트
 const openUploadExcelBtn = document.getElementById('openUploadExcelBtn');
