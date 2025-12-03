@@ -16,3 +16,12 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.database(); // Realtime Database
 
+// 인증 상태를 세션 기반으로 설정 (브라우저 탭을 닫으면 로그아웃)
+auth.setPersistence(firebase.auth.Auth.Persistence.SESSION)
+    .then(() => {
+        console.log('인증 상태가 세션 기반으로 설정되었습니다.');
+    })
+    .catch((error) => {
+        console.error('인증 상태 설정 오류:', error);
+    });
+
