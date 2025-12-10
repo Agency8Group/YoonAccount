@@ -990,7 +990,7 @@ function renderAccounts(accounts, keyword = '') {
                     ${group.accounts.map(account => `
                         <div class="account-item" draggable="false" data-account-id="${account.id}">
                             <div class="account-item-content">
-                                <span class="drag-handle-small" onclick="event.stopPropagation()" title="드래그하여 순서 변경">☰</span>
+                                <span class="drag-handle-small" onclick="event.stopPropagation()">☰</span>
                                 <div class="account-item-info" onclick="event.stopPropagation()">
                                     <div class="account-item-title">${highlightMatches(account.serviceName || '', keyword)}</div>
                                     <div class="account-item-credentials">
@@ -1022,9 +1022,6 @@ function renderAccounts(accounts, keyword = '') {
             </div>
         `;
     }).join('');
-    
-    // 드래그 앤 드롭 이벤트 초기화 (1계정 탭 대분류 순서 변경 기능 제거: 그룹 드래그는 막고, 개별 계정 항목만 유지)
-    initializeDragAndDrop();
     
     // 복사 버튼 이벤트 초기화
     initializeCopyButtons();
@@ -1363,146 +1360,6 @@ window.updateGroupName = async function(groupId, newName, originalKey) {
         console.error('그룹 이름 업데이트 오류:', error);
     }
 };
-
-// 드래그 앤 드롭 초기화
-function initializeDragAndDrop() {
-    const accountItems = document.querySelectorAll('.account-item');
-    
-    // 계정 항목 드래그 앤 드롭만 유지 (대분류 그룹 순서 변경 기능 제거)
-    accountItems.forEach(item => {
-        const dragHandle = item.querySelector('.drag-handle-small');
-        if (dragHandle) {
-            dragHandle.addEventListener('mousedown', (e) => {
-                e.stopPropagation();
-                item.draggable = true;
-            });
-            dragHandle.addEventListener('mouseup', () => {
-                item.draggable = false;
-            });
-        }
-        item.addEventListener('dragstart', handleAccountDragStart);
-        item.addEventListener('dragover', handleAccountDragOver);
-        item.addEventListener('drop', handleAccountDrop);
-        item.addEventListener('dragend', handleAccountDragEnd);
-    });
-}
-
-let draggedGroup = null;
-let draggedAccount = null;
-
-// 그룹 드래그 핸들러
-function handleGroupDragStart(e) {
-    draggedGroup = this;
-    this.classList.add('dragging');
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/html', this.innerHTML);
-}
-
-function handleGroupDragOver(e) {
-    if (!draggedGroup || draggedGroup === this) return;
-    
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    
-    const container = this.parentNode;
-    const afterElement = getDragAfterElement(container, e.clientY, '.accordion-group');
-    
-    if (afterElement == null) {
-        container.appendChild(draggedGroup);
-    } else {
-        container.insertBefore(draggedGroup, afterElement);
-    }
-}
-
-function handleGroupDrop(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    return false;
-}
-
-function handleGroupDragEnd(e) {
-    this.classList.remove('dragging');
-    draggedGroup = null;
-    
-    // 순서 저장
-    saveGroupOrder();
-}
-
-// 계정 항목 드래그 핸들러
-function handleAccountDragStart(e) {
-    // 버튼 클릭 시 드래그 방지
-    if (e.target.classList.contains('btn-icon-small') || e.target.closest('.btn-icon-small')) {
-        e.preventDefault();
-        return;
-    }
-    draggedAccount = this;
-    this.classList.add('dragging');
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/html', this.innerHTML);
-}
-
-function handleAccountDragOver(e) {
-    if (!draggedAccount || draggedAccount === this) return;
-    
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    
-    const container = this.parentNode;
-    const afterElement = getDragAfterElement(container, e.clientY, '.account-item');
-    
-    if (afterElement == null) {
-        container.appendChild(draggedAccount);
-    } else {
-        container.insertBefore(draggedAccount, afterElement);
-    }
-}
-
-function handleAccountDrop(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    return false;
-}
-
-function handleAccountDragEnd(e) {
-    this.classList.remove('dragging');
-    draggedAccount = null;
-}
-
-// 드래그 후 위치 계산
-function getDragAfterElement(container, y, selector) {
-    const draggableElements = [...container.querySelectorAll(`${selector}:not(.dragging)`)];
-    
-    return draggableElements.reduce((closest, child) => {
-        const box = child.getBoundingClientRect();
-        const offset = y - box.top - box.height / 2;
-        
-        if (offset < 0 && offset > closest.offset) {
-            return { offset: offset, element: child };
-        } else {
-            return closest;
-        }
-    }, { offset: Number.NEGATIVE_INFINITY }).element;
-}
-
-// 그룹 순서 저장
-async function saveGroupOrder() {
-    const groups = document.querySelectorAll('.accordion-group');
-    const user = auth.currentUser;
-    if (!user) return;
-    
-    try {
-        // 그룹 순서를 데이터베이스에 저장 (선택적)
-        // 여기서는 로컬 스토리지에 저장하거나 데이터베이스에 order 필드 추가 가능
-        const order = Array.from(groups).map((group, index) => ({
-            key: group.getAttribute('data-group-key'),
-            order: index
-        }));
-        
-        localStorage.setItem('accountGroupOrder', JSON.stringify(order));
-    } catch (error) {
-        console.error('순서 저장 오류:', error);
-    }
-}
 
 // 클립보드에 복사
 window.copyToClipboard = async function(text, elementId) {

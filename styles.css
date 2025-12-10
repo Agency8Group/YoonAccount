@@ -919,7 +919,7 @@ body {
 .drag-handle-small {
     color: var(--text-secondary);
     font-size: 14px;
-    cursor: grab;
+    cursor: default;
     user-select: none;
     flex-shrink: 0;
     padding: 2px;
@@ -930,10 +930,6 @@ body {
 .drag-handle-small:hover {
     color: var(--text-primary);
     background: var(--bg-tertiary);
-}
-
-.drag-handle-small:active {
-    cursor: grabbing;
 }
 
 .group-name-input {
