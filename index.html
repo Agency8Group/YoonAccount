@@ -91,6 +91,7 @@
                     <button class="tab" data-tab="insurance">Insurance</button>
                     <button class="tab" data-tab="extras">Others</button>
                     <button class="tab" data-tab="wifi">Wi-Fi</button>
+                    <button class="tab" data-tab="todo">Todo</button>
                 </div>
 
                 <!-- 계정 탭 -->
@@ -125,6 +126,48 @@
                 <div id="wifiTab" class="tab-content">
                     <div class="accordion-container" id="wifiList">
                         <!-- 와이파이정보 아코디언이 여기에 동적으로 추가됩니다 -->
+                    </div>
+                </div>
+
+                <!-- Todo List 탭 -->
+                <div id="todoTab" class="tab-content">
+                    <div class="todo-wrapper">
+                        <div class="todo-left-panel">
+                            <div class="todo-container">
+                                <div class="todo-header">
+                                   
+                                    <button id="addTodoBtn" class="btn-primary btn-small">
+                                        <span class="icon">+</span>
+                                        추가
+                                    </button>
+                                </div>
+                                <div class="todo-input-container" id="todoInputContainer" style="display: none;">
+                                    <input type="text" id="todoInput" class="todo-input" placeholder="할 일을 입력하세요..." />
+                                    <div class="todo-date-picker-container">
+                                        <label class="todo-date-label">
+                                            <span class="todo-date-icon"></span>
+                                            일정:
+                                        </label>
+                                        <input type="date" id="todoDateInput" class="todo-date-input" />
+                                        <button type="button" id="clearDateBtn" class="btn-icon-small" title="날짜 제거" style="display: none;">✕</button>
+                                    </div>
+                                    <div class="todo-input-actions">
+                                        <button id="saveTodoBtn" class="btn-primary btn-small">저장</button>
+                                        <button id="cancelTodoBtn" class="btn-secondary btn-small">취소</button>
+                                    </div>
+                                </div>
+                                <div class="todo-list" id="todoList">
+                                    <!-- Todo 항목들이 여기에 동적으로 추가됩니다 -->
+                                </div>
+                            </div>
+                        </div>
+                        <div class="todo-right-panel">
+                            <div class="todo-calendar-container">
+                                <div class="todo-calendar" id="todoCalendar">
+                                    <!-- 달력이 여기에 동적으로 생성됩니다 -->
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

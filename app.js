@@ -351,6 +351,12 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (tabName === 'wifi') {
                 const wifiTab = document.getElementById('wifiTab');
                 if (wifiTab) wifiTab.classList.add('active');
+            } else if (tabName === 'todo') {
+                const todoTab = document.getElementById('todoTab');
+                if (todoTab) {
+                    todoTab.classList.add('active');
+                    loadTodos();
+                }
             }
         });
     });
@@ -376,6 +382,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 openModal('extra');
             } else if (activeTab === 'wifi') {
                 openModal('wifi');
+            } else if (activeTab === 'todo') {
+                showTodoInput();
             }
         });
     }
@@ -2125,5 +2133,669 @@ document.addEventListener('touchstart', (e) => {
 if (CSS.supports('scroll-behavior', 'smooth')) {
     document.documentElement.style.scrollBehavior = 'smooth';
 }
+
+// ==================== Todo List 기능 ====================
+
+let editingTodoId = null;
+
+// Todo 데이터 로드
+async function loadTodos() {
+    const user = auth.currentUser;
+    if (!user) {
+        console.log('사용자 로그인 정보 없음');
+        return;
+    }
+    
+    try {
+        const snapshot = await db.ref('todos')
+            .orderByChild('userId')
+            .equalTo(user.uid)
+            .once('value');
+        
+        window.__allTodos = [];
+        
+        if (snapshot.exists()) {
+            snapshot.forEach((childSnapshot) => {
+                const data = { id: childSnapshot.key, ...childSnapshot.val() };
+                window.__allTodos.push(data);
+            });
+        }
+        
+        // 마감일 기준으로 정렬 (가까운 날짜가 위로)
+        window.__allTodos.sort((a, b) => {
+            // 완료된 항목과 미완료 항목 분리
+            if (a.completed !== b.completed) {
+                return a.completed ? 1 : -1; // 미완료가 먼저
+            }
+            
+            // 마감일이 없는 항목은 뒤로
+            if (!a.dueDate && !b.dueDate) {
+                return (b.createdAt || 0) - (a.createdAt || 0); // 둘 다 없으면 최신순
+            }
+            if (!a.dueDate) return 1; // a가 없으면 뒤로
+            if (!b.dueDate) return -1; // b가 없으면 뒤로
+            
+            // 마감일 기준 정렬 (가까운 날짜가 위로)
+            const dateA = new Date(a.dueDate).getTime();
+            const dateB = new Date(b.dueDate).getTime();
+            return dateA - dateB;
+        });
+        
+        renderTodos();
+    } catch (error) {
+        console.error('Todo 로드 오류:', error);
+        alert('할 일 목록을 불러오는 중 오류가 발생했습니다.');
+    }
+}
+
+// Todo 렌더링
+function renderTodos() {
+    const container = document.getElementById('todoList');
+    if (!container) return;
+    
+    const todos = window.__allTodos || [];
+    
+    if (todos.length === 0) {
+        container.innerHTML = '<p class="todo-empty">할 일이 없습니다. 새로운 할 일을 추가해보세요!</p>';
+        return;
+    }
+    
+    // 완료된 항목과 미완료 항목 분리 (이미 정렬되어 있음)
+    const incompleteTodos = todos.filter(todo => !todo.completed);
+    const completedTodos = todos.filter(todo => todo.completed);
+    
+    let html = '';
+    
+    // 미완료 항목 먼저 표시 (마감일 가까운 순서대로)
+    if (incompleteTodos.length > 0) {
+        html += incompleteTodos.map(todo => createTodoItemHTML(todo)).join('');
+    }
+    
+    // 완료된 항목 표시
+    if (completedTodos.length > 0) {
+        html += '<div class="todo-section-divider">완료됨</div>';
+        html += completedTodos.map(todo => createTodoItemHTML(todo)).join('');
+    }
+    
+    container.innerHTML = html;
+    
+    // 이벤트 리스너 초기화
+    initializeTodoEvents();
+    
+    // 달력 렌더링
+    renderCalendar();
+}
+
+// Todo 항목 HTML 생성
+function createTodoItemHTML(todo) {
+    const completedClass = todo.completed ? 'completed' : '';
+    const checkedAttr = todo.completed ? 'checked' : '';
+    
+    // 마감일 표시
+    let dueDateHTML = '';
+    if (todo.dueDate) {
+        const dueDate = new Date(todo.dueDate);
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        dueDate.setHours(0, 0, 0, 0);
+        const isOverdue = !todo.completed && dueDate < now;
+        const isToday = dueDate.getTime() === now.getTime();
+        const dueDateClass = isOverdue ? 'overdue' : (isToday ? 'today' : '');
+        
+        dueDateHTML = `<div class="todo-due-date ${dueDateClass}">
+            ${formatDueDate(todo.dueDate)}
+        </div>`;
+    }
+    
+    return `
+        <div class="todo-item ${completedClass}" data-todo-id="${todo.id}">
+            <label class="todo-checkbox-label">
+                <input type="checkbox" class="todo-checkbox" ${checkedAttr} data-todo-id="${todo.id}" />
+                <span class="todo-checkmark"></span>
+            </label>
+            <div class="todo-content">
+                <div class="todo-text" data-todo-id="${todo.id}">${escapeHtml(todo.text || '')}</div>
+                ${dueDateHTML}
+            </div>
+            <div class="todo-actions">
+                <button class="btn-icon-small todo-edit-btn" data-todo-id="${todo.id}" title="수정">✎</button>
+                <button class="btn-icon-small todo-delete-btn" data-todo-id="${todo.id}" title="삭제">✕</button>
+            </div>
+        </div>
+    `;
+}
+
+// Todo 날짜 포맷 (생성일)
+function formatTodoDate(timestamp) {
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diff = now - date;
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    
+    if (days === 0) return '오늘';
+    if (days === 1) return '어제';
+    if (days < 7) return `${days}일 전`;
+    
+    return date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
+}
+
+// 마감일 포맷
+function formatDueDate(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    date.setHours(0, 0, 0, 0);
+    
+    const diff = date - now;
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    
+    if (days === 0) return '오늘';
+    if (days === 1) return '내일';
+    if (days === -1) return '어제';
+    if (days > 0 && days < 7) return `${days}일 후`;
+    if (days < 0) return `${Math.abs(days)}일 지남`;
+    
+    return date.toLocaleDateString('ko-KR', { 
+        year: 'numeric',
+        month: 'short', 
+        day: 'numeric' 
+    });
+}
+
+// Todo 이벤트 초기화
+function initializeTodoEvents() {
+    // 체크박스 토글 - 즉시 UI 업데이트 후 서버 동기화
+    const checkboxes = document.querySelectorAll('.todo-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', (e) => {
+            const todoId = e.target.dataset.todoId;
+            const todoItem = e.target.closest('.todo-item');
+            const isChecked = e.target.checked;
+            
+            // 즉시 UI 업데이트
+            if (isChecked) {
+                todoItem.classList.add('completed');
+            } else {
+                todoItem.classList.remove('completed');
+            }
+            
+            // 서버 동기화
+            toggleTodoComplete(todoId);
+        });
+    });
+    
+    // 수정 버튼
+    const editButtons = document.querySelectorAll('.todo-edit-btn');
+    editButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const todoId = btn.dataset.todoId;
+            editTodo(todoId);
+        });
+    });
+    
+    // 삭제 버튼
+    const deleteButtons = document.querySelectorAll('.todo-delete-btn');
+    deleteButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const todoId = btn.dataset.todoId;
+            deleteTodo(todoId);
+        });
+    });
+    
+    // 텍스트 클릭으로도 수정 가능
+    const todoTexts = document.querySelectorAll('.todo-text');
+    todoTexts.forEach(text => {
+        text.addEventListener('click', (e) => {
+            const todoId = text.dataset.todoId;
+            editTodo(todoId);
+        });
+    });
+}
+
+// Todo 추가
+async function addTodo(text, dueDate = null) {
+    if (!text || !text.trim()) {
+        alert('할 일을 입력해주세요.');
+        return;
+    }
+    
+    const user = auth.currentUser;
+    if (!user) {
+        alert('로그인이 필요합니다.');
+        return;
+    }
+    
+    try {
+        const todoData = {
+            text: text.trim(),
+            completed: false,
+            userId: user.uid,
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+        };
+        
+        if (dueDate) {
+            todoData.dueDate = dueDate;
+        }
+        
+        await db.ref('todos').push(todoData);
+        await loadTodos();
+        
+        // 입력 필드 초기화
+        const todoInput = document.getElementById('todoInput');
+        const todoDateInput = document.getElementById('todoDateInput');
+        if (todoInput) todoInput.value = '';
+        if (todoDateInput) todoDateInput.value = '';
+        hideTodoInput();
+    } catch (error) {
+        console.error('Todo 추가 오류:', error);
+        alert('할 일 추가 중 오류가 발생했습니다.');
+    }
+}
+
+// Todo 수정
+function editTodo(todoId) {
+    const todo = (window.__allTodos || []).find(t => t.id === todoId);
+    if (!todo) return;
+    
+    editingTodoId = todoId;
+    const todoInput = document.getElementById('todoInput');
+    const todoDateInput = document.getElementById('todoDateInput');
+    const todoInputContainer = document.getElementById('todoInputContainer');
+    const clearDateBtn = document.getElementById('clearDateBtn');
+    
+    if (todoInput && todoInputContainer) {
+        todoInput.value = todo.text;
+        
+        // 날짜 입력 필드 설정
+        if (todoDateInput) {
+            if (todo.dueDate) {
+                const date = new Date(todo.dueDate);
+                const dateString = date.toISOString().split('T')[0];
+                todoDateInput.value = dateString;
+                if (clearDateBtn) clearDateBtn.style.display = 'block';
+            } else {
+                todoDateInput.value = '';
+                if (clearDateBtn) clearDateBtn.style.display = 'none';
+            }
+        }
+        
+        todoInputContainer.style.display = 'block';
+        todoInput.focus();
+        todoInput.select();
+    }
+}
+
+// Todo 업데이트
+async function updateTodo(todoId, text, dueDate = null) {
+    if (!text || !text.trim()) {
+        alert('할 일을 입력해주세요.');
+        return;
+    }
+    
+    const user = auth.currentUser;
+    if (!user) {
+        alert('로그인이 필요합니다.');
+        return;
+    }
+    
+    try {
+        const todoData = {
+            text: text.trim(),
+            updatedAt: Date.now()
+        };
+        
+        if (dueDate) {
+            todoData.dueDate = dueDate;
+        } else {
+            todoData.dueDate = null;
+        }
+        
+        await db.ref('todos').child(todoId).update(todoData);
+        await loadTodos();
+        
+        editingTodoId = null;
+        hideTodoInput();
+    } catch (error) {
+        console.error('Todo 업데이트 오류:', error);
+        alert('할 일 수정 중 오류가 발생했습니다.');
+    }
+}
+
+// Todo 완료 토글
+async function toggleTodoComplete(todoId) {
+    const user = auth.currentUser;
+    if (!user) return;
+    
+    const todo = (window.__allTodos || []).find(t => t.id === todoId);
+    if (!todo) return;
+    
+    try {
+        await db.ref('todos').child(todoId).update({
+            completed: !todo.completed,
+            updatedAt: Date.now()
+        });
+        await loadTodos();
+    } catch (error) {
+        console.error('Todo 완료 토글 오류:', error);
+        alert('할 일 상태 변경 중 오류가 발생했습니다.');
+    }
+}
+
+// Todo 삭제
+async function deleteTodo(todoId) {
+    if (!confirm('이 할 일을 삭제하시겠습니까?')) return;
+    
+    const user = auth.currentUser;
+    if (!user) {
+        alert('로그인이 필요합니다.');
+        return;
+    }
+    
+    try {
+        await db.ref('todos').child(todoId).remove();
+        await loadTodos();
+    } catch (error) {
+        console.error('Todo 삭제 오류:', error);
+        alert('할 일 삭제 중 오류가 발생했습니다.');
+    }
+}
+
+// Todo 입력 필드 표시/숨김
+function showTodoInput() {
+    const todoInputContainer = document.getElementById('todoInputContainer');
+    const todoInput = document.getElementById('todoInput');
+    if (todoInputContainer && todoInput) {
+        todoInputContainer.style.display = 'block';
+        todoInput.focus();
+        editingTodoId = null;
+        todoInput.value = '';
+    }
+}
+
+function hideTodoInput() {
+    const todoInputContainer = document.getElementById('todoInputContainer');
+    const todoInput = document.getElementById('todoInput');
+    const todoDateInput = document.getElementById('todoDateInput');
+    const clearDateBtn = document.getElementById('clearDateBtn');
+    
+    if (todoInputContainer && todoInput) {
+        todoInputContainer.style.display = 'none';
+        todoInput.value = '';
+        if (todoDateInput) todoDateInput.value = '';
+        if (clearDateBtn) clearDateBtn.style.display = 'none';
+        editingTodoId = null;
+    }
+}
+
+// 달력 렌더링
+let currentCalendarMonth = new Date().getMonth();
+let currentCalendarYear = new Date().getFullYear();
+
+function renderCalendar() {
+    const calendarEl = document.getElementById('todoCalendar');
+    if (!calendarEl) return;
+    
+    const todos = window.__allTodos || [];
+    const now = new Date();
+    
+    // 날짜별 Todo 그룹화
+    const todosByDate = {};
+    todos.forEach(todo => {
+        if (todo.dueDate) {
+            const dateKey = new Date(todo.dueDate).toDateString();
+            if (!todosByDate[dateKey]) {
+                todosByDate[dateKey] = [];
+            }
+            todosByDate[dateKey].push(todo);
+        }
+    });
+    
+    // 달력 헤더
+    const monthNames = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
+    const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+    
+    // 현재 달의 첫 날과 마지막 날
+    const firstDay = new Date(currentCalendarYear, currentCalendarMonth, 1);
+    const lastDay = new Date(currentCalendarYear, currentCalendarMonth + 1, 0);
+    const firstDayOfWeek = firstDay.getDay();
+    const daysInMonth = lastDay.getDate();
+    
+    // 이전 달의 마지막 날들
+    const prevMonthLastDay = new Date(currentCalendarYear, currentCalendarMonth, 0).getDate();
+    
+    let html = `
+        <div class="calendar-header">
+            <button class="calendar-nav-btn" id="calendarPrevBtn">‹</button>
+            <div class="calendar-month-year">${currentCalendarYear}년 ${monthNames[currentCalendarMonth]}</div>
+            <button class="calendar-nav-btn" id="calendarNextBtn">›</button>
+        </div>
+        <div class="calendar-weekdays">
+            ${weekdays.map(day => `<div class="calendar-weekday">${day}</div>`).join('')}
+        </div>
+        <div class="calendar-days">
+    `;
+    
+    // 이전 달의 날짜들
+    for (let i = firstDayOfWeek - 1; i >= 0; i--) {
+        const date = prevMonthLastDay - i;
+        const dateObj = new Date(currentCalendarYear, currentCalendarMonth - 1, date);
+        const dateKey = dateObj.toDateString();
+        const dayTodos = todosByDate[dateKey] || [];
+        const hasTodo = dayTodos.length > 0;
+        const isOverdue = hasTodo && dayTodos.some(t => !t.completed && dateObj < now);
+        
+        html += `<div class="calendar-day other-month${hasTodo ? ' has-todo' : ''}${isOverdue ? ' overdue' : ''}" 
+                     data-date="${dateKey}"
+                     ${hasTodo ? `data-todos='${JSON.stringify(dayTodos.map(t => ({text: t.text, completed: t.completed})))}'` : ''}>
+            ${date}
+            ${hasTodo ? '<span class="calendar-day-indicator"></span>' : ''}
+        </div>`;
+    }
+    
+    // 현재 달의 날짜들
+    for (let date = 1; date <= daysInMonth; date++) {
+        const dateObj = new Date(currentCalendarYear, currentCalendarMonth, date);
+        const dateKey = dateObj.toDateString();
+        const dayTodos = todosByDate[dateKey] || [];
+        const hasTodo = dayTodos.length > 0;
+        const isToday = dateObj.toDateString() === now.toDateString();
+        const isOverdue = hasTodo && dayTodos.some(t => !t.completed && dateObj < now);
+        
+        html += `<div class="calendar-day${isToday ? ' today' : ''}${hasTodo ? ' has-todo' : ''}${isOverdue ? ' overdue' : ''}" 
+                     data-date="${dateKey}"
+                     ${hasTodo ? `data-todos='${JSON.stringify(dayTodos.map(t => ({text: t.text, completed: t.completed})))}'` : ''}>
+            ${date}
+            ${hasTodo ? '<span class="calendar-day-indicator"></span>' : ''}
+        </div>`;
+    }
+    
+    // 다음 달의 날짜들 (달력을 채우기 위해)
+    const totalCells = firstDayOfWeek + daysInMonth;
+    const remainingCells = 42 - totalCells; // 6주 * 7일 = 42
+    for (let date = 1; date <= remainingCells; date++) {
+        const dateObj = new Date(currentCalendarYear, currentCalendarMonth + 1, date);
+        const dateKey = dateObj.toDateString();
+        const dayTodos = todosByDate[dateKey] || [];
+        const hasTodo = dayTodos.length > 0;
+        const isOverdue = hasTodo && dayTodos.some(t => !t.completed && dateObj < now);
+        
+        html += `<div class="calendar-day other-month${hasTodo ? ' has-todo' : ''}${isOverdue ? ' overdue' : ''}" 
+                     data-date="${dateKey}"
+                     ${hasTodo ? `data-todos='${JSON.stringify(dayTodos.map(t => ({text: t.text, completed: t.completed})))}'` : ''}>
+            ${date}
+            ${hasTodo ? '<span class="calendar-day-indicator"></span>' : ''}
+        </div>`;
+    }
+    
+    html += '</div>';
+    calendarEl.innerHTML = html;
+    
+    // 네비게이션 버튼 이벤트
+    const prevBtn = document.getElementById('calendarPrevBtn');
+    const nextBtn = document.getElementById('calendarNextBtn');
+    
+    if (prevBtn) {
+        prevBtn.onclick = () => {
+            currentCalendarMonth--;
+            if (currentCalendarMonth < 0) {
+                currentCalendarMonth = 11;
+                currentCalendarYear--;
+            }
+            renderCalendar();
+        };
+    }
+    
+    if (nextBtn) {
+        nextBtn.onclick = () => {
+            currentCalendarMonth++;
+            if (currentCalendarMonth > 11) {
+                currentCalendarMonth = 0;
+                currentCalendarYear++;
+            }
+            renderCalendar();
+        };
+    }
+    
+    // 날짜 호버 이벤트 (툴팁)
+    let tooltip = document.querySelector('.calendar-tooltip');
+    if (!tooltip) {
+        tooltip = document.createElement('div');
+        tooltip.className = 'calendar-tooltip';
+        document.body.appendChild(tooltip);
+    }
+    
+    const calendarDays = calendarEl.querySelectorAll('.calendar-day[data-todos]');
+    calendarDays.forEach(day => {
+        day.addEventListener('mouseenter', (e) => {
+            try {
+                const todos = JSON.parse(day.getAttribute('data-todos') || '[]');
+                if (todos.length === 0) return;
+                
+                const dateKey = day.getAttribute('data-date');
+                const date = new Date(dateKey);
+                const dateStr = date.toLocaleDateString('ko-KR', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric',
+                    weekday: 'short'
+                });
+                
+                let tooltipHTML = `<div class="calendar-tooltip-date">${dateStr}</div>`;
+                tooltipHTML += '<div class="calendar-tooltip-todos">';
+                
+                todos.forEach(todo => {
+                    const overdue = !todo.completed && new Date(dateKey) < now;
+                    tooltipHTML += `<div class="calendar-tooltip-todo ${todo.completed ? 'completed' : ''} ${overdue ? 'overdue' : ''}">
+                        ${todo.completed ? '✓' : '○'} ${escapeHtml(todo.text)}
+                    </div>`;
+                });
+                
+                tooltipHTML += '</div>';
+                tooltip.innerHTML = tooltipHTML;
+                tooltip.classList.add('show');
+                
+                // 툴팁 위치 계산
+                const rect = day.getBoundingClientRect();
+                const tooltipRect = tooltip.getBoundingClientRect();
+                let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+                let top = rect.bottom + 10;
+                
+                // 화면 밖으로 나가지 않도록 조정
+                if (left < 10) left = 10;
+                if (left + tooltipRect.width > window.innerWidth - 10) {
+                    left = window.innerWidth - tooltipRect.width - 10;
+                }
+                if (top + tooltipRect.height > window.innerHeight - 10) {
+                    top = rect.top - tooltipRect.height - 10;
+                }
+                
+                tooltip.style.left = left + 'px';
+                tooltip.style.top = top + 'px';
+            } catch (error) {
+                console.error('Tooltip error:', error);
+            }
+        });
+        
+        day.addEventListener('mouseleave', () => {
+            tooltip.classList.remove('show');
+        });
+    });
+}
+
+// Todo 이벤트 리스너 초기화 (DOMContentLoaded)
+document.addEventListener('DOMContentLoaded', () => {
+    const addTodoBtn = document.getElementById('addTodoBtn');
+    const saveTodoBtn = document.getElementById('saveTodoBtn');
+    const cancelTodoBtn = document.getElementById('cancelTodoBtn');
+    const todoInput = document.getElementById('todoInput');
+    const todoDateInput = document.getElementById('todoDateInput');
+    const clearDateBtn = document.getElementById('clearDateBtn');
+    
+    if (addTodoBtn) {
+        addTodoBtn.addEventListener('click', () => {
+            showTodoInput();
+        });
+    }
+    
+    if (saveTodoBtn && todoInput) {
+        saveTodoBtn.addEventListener('click', () => {
+            const text = todoInput.value.trim();
+            const dueDate = todoDateInput && todoDateInput.value ? todoDateInput.value : null;
+            
+            if (editingTodoId) {
+                updateTodo(editingTodoId, text, dueDate);
+            } else {
+                addTodo(text, dueDate);
+            }
+        });
+    }
+    
+    if (cancelTodoBtn) {
+        cancelTodoBtn.addEventListener('click', () => {
+            hideTodoInput();
+        });
+    }
+    
+    if (todoInput) {
+        todoInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const text = todoInput.value.trim();
+                const dueDate = todoDateInput && todoDateInput.value ? todoDateInput.value : null;
+                
+                if (editingTodoId) {
+                    updateTodo(editingTodoId, text, dueDate);
+                } else {
+                    addTodo(text, dueDate);
+                }
+            } else if (e.key === 'Escape') {
+                hideTodoInput();
+            }
+        });
+    }
+    
+    // 날짜 입력 필드 변경 시
+    if (todoDateInput) {
+        todoDateInput.addEventListener('change', () => {
+            if (clearDateBtn) {
+                clearDateBtn.style.display = todoDateInput.value ? 'block' : 'none';
+            }
+        });
+    }
+    
+    // 날짜 제거 버튼
+    if (clearDateBtn) {
+        clearDateBtn.addEventListener('click', () => {
+            if (todoDateInput) {
+                todoDateInput.value = '';
+                clearDateBtn.style.display = 'none';
+            }
+        });
+    }
+});
 
 
